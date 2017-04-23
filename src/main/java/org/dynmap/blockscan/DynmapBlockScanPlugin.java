@@ -5,12 +5,15 @@ import java.util.Collection;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.dynmap.blockscan.statehandlers.BedMetadtataStateHandler;
+import org.dynmap.blockscan.statehandlers.BedMetadataStateHandler;
 import org.dynmap.blockscan.statehandlers.IStateHandler;
 import org.dynmap.blockscan.statehandlers.IStateHandlerFactory;
-import org.dynmap.blockscan.statehandlers.PistonMetadtataStateHandler;
-import org.dynmap.blockscan.statehandlers.SimpleMetadtataStateHandler;
-import org.dynmap.blockscan.statehandlers.SnowyMetadtataStateHandler;
+import org.dynmap.blockscan.statehandlers.PistonMetadataStateHandler;
+import org.dynmap.blockscan.statehandlers.SimpleMetadataStateHandler;
+import org.dynmap.blockscan.statehandlers.SnowyMetadataStateHandler;
+import org.dynmap.blockscan.statehandlers.StairMetadataStateHandler;
+import org.dynmap.blockscan.statehandlers.DoorStateHandler;
+import org.dynmap.blockscan.statehandlers.RedstoneWireStateHandler;
 
 import net.minecraft.block.Block;
 import net.minecraft.block.properties.IProperty;
@@ -25,10 +28,13 @@ public class DynmapBlockScanPlugin
     private MinecraftServer server;
     
     private IStateHandlerFactory[] state_handler = {
-        new PistonMetadtataStateHandler(),
-        new SnowyMetadtataStateHandler(),
-        new BedMetadtataStateHandler(),
-        new SimpleMetadtataStateHandler()
+        new RedstoneWireStateHandler(),
+        new StairMetadataStateHandler(),
+        new DoorStateHandler(),
+        new PistonMetadataStateHandler(),
+        new SnowyMetadataStateHandler(),
+        new BedMetadataStateHandler(),
+        new SimpleMetadataStateHandler()
     };
 
     public DynmapBlockScanPlugin(MinecraftServer srv)

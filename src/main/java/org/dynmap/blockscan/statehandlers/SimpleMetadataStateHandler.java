@@ -18,7 +18,7 @@ import net.minecraft.block.state.IBlockState;
  * 
  * @author Mike Primm
  */
-public class SimpleMetadtataStateHandler implements IStateHandlerFactory {
+public class SimpleMetadataStateHandler implements IStateHandlerFactory {
     /**
      * This method is used to examining the BlockStateContainer of a block to determine if the state mapper can handle the given block
      * @param block - Block object

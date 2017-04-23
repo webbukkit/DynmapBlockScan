@@ -19,7 +19,7 @@ import net.minecraft.block.state.IBlockState;
  * 
  * @author Mike Primm
  */
-public class SnowyMetadtataStateHandler implements IStateHandlerFactory {
+public class SnowyMetadataStateHandler implements IStateHandlerFactory {
     /**
      * This method is used to examining the BlockStateContainer of a block to determine if the state mapper can handle the given block
      * @param block - Block object
@@ -27,7 +27,7 @@ public class SnowyMetadtataStateHandler implements IStateHandlerFactory {
      * @returns IStateHandler if the handler factory believes it can handle this block type, null otherwise
      */
     public IStateHandler canHandleBlockState(Block block, BlockStateContainer bsc) {
-        IProperty<?> snowy = bsc.getProperty("snowy");
+        IProperty<?> snowy = IStateHandlerFactory.findMatchingBooleanProperty(bsc, "snowy");
         if (snowy == null) {
             return null;
         }
