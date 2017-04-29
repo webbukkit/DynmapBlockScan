@@ -14,6 +14,9 @@ import org.dynmap.blockscan.statehandlers.SnowyMetadataStateHandler;
 import org.dynmap.blockscan.statehandlers.StairMetadataStateHandler;
 import org.dynmap.blockscan.statehandlers.DoorStateHandler;
 import org.dynmap.blockscan.statehandlers.RedstoneWireStateHandler;
+import org.dynmap.blockscan.statehandlers.NSEWUConnectedMetadataStateHandler;
+import org.dynmap.blockscan.statehandlers.NSEWConnectedMetadataStateHandler;
+import org.dynmap.blockscan.statehandlers.GateMetadataStateHandler;
 
 import net.minecraft.block.Block;
 import net.minecraft.block.properties.IProperty;
@@ -28,7 +31,10 @@ public class DynmapBlockScanPlugin
     private MinecraftServer server;
     
     private IStateHandlerFactory[] state_handler = {
+        new NSEWConnectedMetadataStateHandler(),
+        new NSEWUConnectedMetadataStateHandler(),
         new RedstoneWireStateHandler(),
+        new GateMetadataStateHandler(),
         new StairMetadataStateHandler(),
         new DoorStateHandler(),
         new PistonMetadataStateHandler(),
