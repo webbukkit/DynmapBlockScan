@@ -1,0 +1,8 @@
+/bin/
+/build/
+/.project
+/.gradle
+/DynmapBlockScan-*.jar
+/DynmapBlockScan_Client.launch
+/DynmapBlockScan_Server.launch
+/.classpath
