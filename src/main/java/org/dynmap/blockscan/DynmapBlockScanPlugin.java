@@ -118,7 +118,7 @@ public class DynmapBlockScanPlugin
             	}
             }
             else {
-        		logger.info("Failed to open blockstate!");
+        		logger.info("Failed to open blockstate " + path + " for modid " + modid);
             }
         }
     }
