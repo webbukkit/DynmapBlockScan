@@ -21,9 +21,7 @@ public class VariantList {
 	}
 	
 	public String toString() {
-		StringBuilder sb = new StringBuilder();
-		sb.append("[").append(variantList).append("]");
-		return sb.toString();
+		return variantList.toString();
 	}
 	
 	// Custom deserializer - handles singleton and list formats

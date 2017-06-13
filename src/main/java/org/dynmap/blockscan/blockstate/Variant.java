@@ -9,7 +9,7 @@ public class Variant {
 	public int weight = 1;
 	
 	public String toString() {
-		StringBuilder sb = new StringBuilder();
+		StringBuilder sb = new StringBuilder("{");
 		sb.append("model=").append(model);
 		if (x != 0)
 			sb.append(",x=").append(x);
@@ -19,6 +19,7 @@ public class Variant {
 			sb.append(",uvlock=true");
 		if (weight != 1)
 			sb.append(",weight=").append(weight);
+		sb.append("}");
 		return sb.toString();
 	}
 }
