@@ -6,9 +6,9 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
 import java.util.Map.Entry;
+import java.util.Set;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -23,12 +23,14 @@ import org.dynmap.blockscan.statehandlers.PistonMetadataStateHandler;
 import org.dynmap.blockscan.statehandlers.SimpleMetadataStateHandler;
 import org.dynmap.blockscan.statehandlers.SnowyMetadataStateHandler;
 import org.dynmap.blockscan.statehandlers.StairMetadataStateHandler;
+import org.dynmap.blockscan.statehandlers.StateContainer;
 
 import com.google.common.base.Charsets;
 import com.google.common.collect.ImmutableMap;
 import com.google.gson.Gson;
 
 import org.dynmap.blockscan.statehandlers.DoorStateHandler;
+import org.dynmap.blockscan.statehandlers.ForgeStateContainer;
 import org.dynmap.blockscan.statehandlers.RedstoneWireStateHandler;
 import org.dynmap.blockscan.statehandlers.NSEWUConnectedMetadataStateHandler;
 import org.dynmap.blockscan.statehandlers.NSEWConnectedMetadataStateHandler;
@@ -47,7 +49,6 @@ public class DynmapBlockScanPlugin
 {
     public static OurLog logger = new OurLog();
     public static DynmapBlockScanPlugin plugin;
-    private MinecraftServer server;
     
     private IStateHandlerFactory[] state_handler = {
         new NSEWConnectedMetadataStateHandler(),
@@ -65,7 +66,6 @@ public class DynmapBlockScanPlugin
     public DynmapBlockScanPlugin(MinecraftServer srv)
     {
         plugin = this;
-        this.server = srv;
     }
 
 
@@ -82,10 +82,47 @@ public class DynmapBlockScanPlugin
             ResourceLocation rl = b.getRegistryName();
             logger.info(String.format("Block %s: %d", rl, Block.getIdFromBlock(b)));
             BlockStateContainer bsc = b.getBlockState();
+            BlockState blockstate = null;
+            // Try to find blockstate file
+            String modid = rl.getResourceDomain();
+            String path = "assets/" + modid + "/blockstates/" + rl.getResourcePath() + ".json";
+            InputStream is = openResource(modid, path);
+            if (is != null) {	// Found it?
+            	Reader rdr = new InputStreamReader(is, Charsets.UTF_8);
+            	Gson parse = BlockState.buildParser();	// Get parser
+            	blockstate = parse.fromJson(rdr, BlockState.class);
+            	try {
+					is.close();
+				} catch (IOException e) {
+				}
+            	if (blockstate == null) {
+            		logger.info("Failed to load blockstate!");
+            	}
+            }
+            else {
+        		logger.info("Failed to open blockstate " + path + " for modid " + modid);
+            }
+            
+            Set<String> renderprops = null;
+            // Process blockstate
+        	if (blockstate != null) {
+        		//logger.info(blockstate.toString());
+        		
+        		// Now, loop through our IBlockStates and see how we do on mappings
+                for (IBlockState valid : bsc.getValidStates()) {
+                	ImmutableMap<String, String> state_props = fromIBlockState(valid);
+                	List<VariantList> vlist = getMatchingVariants(blockstate, state_props);
+                	logger.info("State " + state_props + " returned variants " + vlist);
+                }
+                renderprops = blockstate.getRenderProps();
+        	}
+        	// Build generic block state container for block
+        	StateContainer sc = new ForgeStateContainer(b, bsc, renderprops);
+        	//logger.info(sc.toString());
             // Check for matching handler
             IStateHandler handler = null;
             for (IStateHandlerFactory f : state_handler) {
-                handler = f.canHandleBlockState(b, bsc);
+              	handler = f.canHandleBlockState(sc);
                 if (handler != null) {
                     logger.info("  Handled by " + handler.getName());
                     break;
@@ -94,7 +131,7 @@ public class DynmapBlockScanPlugin
             if (handler == null) {
                 logger.info("  NO MATCHING HANDLER");
             }
-            Collection<IProperty<?>> props = bsc.getProperties();
+            //Collection<IProperty<?>> props = bsc.getProperties();
             //for (IBlockState valid : bsc.getValidStates()) {
             //    StringBuilder sb = new StringBuilder();
             //    for(IProperty<?> p : props) {
@@ -104,35 +141,6 @@ public class DynmapBlockScanPlugin
             //    }
             //    logger.info(String.format("  State %s: meta=%d, rendertype=%s", sb.toString(), b.getMetaFromState(valid), valid.getRenderType()));
             //}
-            // Try to find blockstate file
-            String modid = rl.getResourceDomain();
-            String path = "assets/" + modid + "/blockstates/" + rl.getResourcePath() + ".json";
-            InputStream is = openResource(modid, path);
-            if (is != null) {	// Found it?
-            	Reader rdr = new InputStreamReader(is, Charsets.UTF_8);
-            	Gson parse = BlockState.buildParser();	// Get parser
-            	BlockState bs = parse.fromJson(rdr, BlockState.class);
-            	try {
-					is.close();
-				} catch (IOException e) {
-				}
-            	if (bs != null) {
-            		//logger.info(bs.toString());
-            		
-            		// Now, loop through our IBlockStates and see how we do on mappings
-                    for (IBlockState valid : bsc.getValidStates()) {
-                    	ImmutableMap<String, String> state_props = fromIBlockState(valid);
-                    	List<VariantList> vlist = getMatchingVariants(bs, state_props);
-                    	logger.info("State " + state_props + " returned variants " + vlist);
-                    }
-            	}
-            	else {
-            		logger.info("Failed to load blockstate!");
-            	}
-            }
-            else {
-        		logger.info("Failed to open blockstate " + path + " for modid " + modid);
-            }
         }
     }
     

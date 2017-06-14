@@ -1,12 +1,6 @@
 package org.dynmap.blockscan.statehandlers;
 
-import java.awt.List;
-import java.util.Arrays;
-import java.util.Collection;
-
-import net.minecraft.block.Block;
-import net.minecraft.block.properties.IProperty;
-import net.minecraft.block.state.BlockStateContainer;
+import java.util.List;
 
 /**
  * This interface is used to define 'state handlers' for Dynmap
@@ -19,45 +13,46 @@ import net.minecraft.block.state.BlockStateContainer;
  */
 public interface IStateHandlerFactory {
     /**
-     * This method is used to examining the BlockStateContainer of a block to determine if the state mapper can handle the given block
-     * @param block - Block object
-     * @param bsc - BlockStateContainer object
+     * This method is used to examining the StateContainer of a block to determine if the state mapper can handle the given block
+     * @param sc - StateContainer object
      * @returns IStateHandler if the handler factory believes it can handle this block type, null otherwise
      */
-    public IStateHandler canHandleBlockState(Block block, BlockStateContainer bsc);
+    public IStateHandler canHandleBlockState(StateContainer sc);
     
     
     /**
      * Utility method : test for presence of property with given list of values
-     * @param bsc - BlockStateContainer
+     * @param sc - StateContainer
      * @param prop - property name
      * @param values - list of values
-     * @return matching property, or null
+     * @return true if matching, false if not
      */
-    public static IProperty<?> findMatchingProperty(BlockStateContainer bsc, String prop, String[] values) {
-        IProperty<?> p = bsc.getProperty(prop);
-        if (p == null) {
-            return null;
-        }
+    public static boolean findMatchingProperty(StateContainer bsc, String prop, String[] values) {
+    	List<String> vals = bsc.renderProperties.get(prop);
+    	if (vals == null) {
+    		return false;
+    	}
+    	if (values.length != vals.size()) {
+    		return false;
+    	}
         int cnt = 0;
-        for (Comparable<?> v : p.getAllowedValues()) {
-            String val = v.toString();
+        for (String v : vals) {
             boolean match = false;
             for (String mval : values) {
-                if (mval.equals(val)) {
+                if (mval.equals(v)) {
                     match = true;
                     break;
                 }
             }
             if (!match) {
-                return null;
+                return false;
             }
             cnt++;
         }
         if (cnt != values.length) {
-            return null;
+            return false;
         }
-        return p;
+        return true;
     }
     // Well-known value set : boolean
     public static final String booleanValues[] = { "true", "false" };
@@ -67,11 +62,11 @@ public interface IStateHandlerFactory {
     public static final String facingValues[] = { "north", "south", "east", "west" };
     /**
      * Utility method : test for presence of property with boolean values
-     * @param bsc - BlockStateContainer
+     * @param bsc - StateContainer
      * @param prop - property name
-     * @return matching property, or null
+     * @return true if matching, false if not
      */
-    public static IProperty<?> findMatchingBooleanProperty(BlockStateContainer bsc, String prop) {
+    public static boolean findMatchingBooleanProperty(StateContainer bsc, String prop) {
         return findMatchingProperty(bsc, prop, booleanValues);
     }
 }

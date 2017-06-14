@@ -5,12 +5,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import com.google.common.collect.ImmutableMap;
-
-import net.minecraft.block.Block;
-import net.minecraft.block.properties.IProperty;
-import net.minecraft.block.state.BlockStateContainer;
-import net.minecraft.block.state.IBlockState;
+import org.dynmap.blockscan.statehandlers.StateContainer.StateRec;
 
 /**
  * This state handler is used for blocks which preserve a simple 1-1 correlation between 
@@ -21,26 +16,25 @@ import net.minecraft.block.state.IBlockState;
  */
 public class PistonMetadataStateHandler implements IStateHandlerFactory {
     /**
-     * This method is used to examining the BlockStateContainer of a block to determine if the state mapper can handle the given block
-     * @param block - Block object
-     * @param bsc - BlockStateContainer object
+     * This method is used to examining the StateContainer of a block to determine if the state mapper can handle the given block
+     * @param bsc - StateContainer object
      * @returns IStateHandler if the handler factory believes it can handle this block type, null otherwise
      */
-    public IStateHandler canHandleBlockState(Block block, BlockStateContainer bsc) {
-        IProperty<?> shortp = IStateHandlerFactory.findMatchingBooleanProperty(bsc, "short");
-        if (shortp == null) {
+    public IStateHandler canHandleBlockState(StateContainer bsc) {
+        boolean shortp = IStateHandlerFactory.findMatchingBooleanProperty(bsc, "short");
+        if (!shortp) {
             return null;
         }
-        List<IBlockState> state = bsc.getValidStates();
+        List<StateRec> state = bsc.getValidStates();
         // More states than metadata values - cannot handle this
         if (state.size() > 32) {
             return null;
         }
-        IBlockState[] metavalues = new IBlockState[16];
-        IBlockState[] shortpmetavalues = new IBlockState[16];
-        for (IBlockState s : state) {
-            int meta = block.getMetaFromState(s);   // Lookup meta for this state
-            String is_shortp = s.getValue(shortp).toString();
+        StateRec[] metavalues = new StateRec[16];
+        StateRec[] shortpmetavalues = new StateRec[16];
+        for (StateRec s : state) {
+            int meta = s.metadata;   // Lookup meta for this state
+            String is_shortp = s.getValue("short");
             // If out of range, or duplicate, we cannot handle
             if ((meta < 0) || (meta > 15)) {
                 return null;
@@ -65,10 +59,10 @@ public class PistonMetadataStateHandler implements IStateHandlerFactory {
         // Fill in any missing metadata with default state
         for (int i = 0; i < metavalues.length; i++) {
             if (metavalues[i] == null) {
-                metavalues[i] = block.getDefaultState();
+                metavalues[i] = bsc.getDefaultState();
             }
             if (shortpmetavalues[i] == null) {
-                shortpmetavalues[i] = block.getDefaultState();
+                shortpmetavalues[i] = bsc.getDefaultState();
             }
         }
         // Return handler object
@@ -79,31 +73,32 @@ public class PistonMetadataStateHandler implements IStateHandlerFactory {
         private String[] string_values;
         private Map<String, String>[] map_values;
         
-        OurHandler(IBlockState[] states, IBlockState[] shortpstates) {
+        @SuppressWarnings("unchecked")
+		OurHandler(StateRec[] states, StateRec[] shortpstates) {
             string_values = new String[32];
             map_values = new Map[32];
             // Handle short states first
             for (int i = 0; i < 16; i++) {
-                IBlockState bs = shortpstates[i];
+                StateRec bs = shortpstates[i];
                 HashMap<String, String> m = new HashMap<String,String>();
                 StringBuilder sb = new StringBuilder();
-                for (Entry<IProperty<?>, Comparable<?>> p : bs.getProperties().entrySet()) {
+                for (Entry<String, String> p : bs.getProperties().entrySet()) {
                     if (sb.length() > 0) sb.append(",");
-                    sb.append(p.getKey().getName()).append("=").append(p.getValue().toString());
-                    m.put(p.getKey().getName(), p.getValue().toString());
+                    sb.append(p.getKey()).append("=").append(p.getValue());
+                    m.put(p.getKey(), p.getValue());
                 }
                 map_values[i] = m;
                 string_values[i] = sb.toString();
             }
             // Handle unshort states second
             for (int i = 0; i < 16; i++) {
-                IBlockState bs = states[i];
+                StateRec bs = states[i];
                 HashMap<String, String> m = new HashMap<String,String>();
                 StringBuilder sb = new StringBuilder();
-                for (Entry<IProperty<?>, Comparable<?>> p : bs.getProperties().entrySet()) {
+                for (Entry<String, String> p : bs.getProperties().entrySet()) {
                     if (sb.length() > 0) sb.append(",");
-                    sb.append(p.getKey().getName()).append("=").append(p.getValue().toString());
-                    m.put(p.getKey().getName(), p.getValue().toString());
+                    sb.append(p.getKey()).append("=").append(p.getValue());
+                    m.put(p.getKey(), p.getValue());
                 }
                 map_values[16+i] = m;
                 string_values[16+i] = sb.toString();

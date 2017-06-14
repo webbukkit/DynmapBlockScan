@@ -5,12 +5,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import com.google.common.collect.ImmutableMap;
-
-import net.minecraft.block.Block;
-import net.minecraft.block.properties.IProperty;
-import net.minecraft.block.state.BlockStateContainer;
-import net.minecraft.block.state.IBlockState;
+import org.dynmap.blockscan.statehandlers.StateContainer.StateRec;
 
 /**
  * This state handler is used for blocks which preserve a simple 1-1 correlation between 
@@ -21,26 +16,25 @@ import net.minecraft.block.state.IBlockState;
  */
 public class SnowyMetadataStateHandler implements IStateHandlerFactory {
     /**
-     * This method is used to examining the BlockStateContainer of a block to determine if the state mapper can handle the given block
-     * @param block - Block object
-     * @param bsc - BlockStateContainer object
+     * This method is used to examining the StateContainer of a block to determine if the state mapper can handle the given block
+     * @param bsc - StateContainer object
      * @returns IStateHandler if the handler factory believes it can handle this block type, null otherwise
      */
-    public IStateHandler canHandleBlockState(Block block, BlockStateContainer bsc) {
-        IProperty<?> snowy = IStateHandlerFactory.findMatchingBooleanProperty(bsc, "snowy");
-        if (snowy == null) {
+    public IStateHandler canHandleBlockState(StateContainer bsc) {
+        boolean snowy = IStateHandlerFactory.findMatchingBooleanProperty(bsc, "snowy");
+        if (!snowy) {
             return null;
         }
-        List<IBlockState> state = bsc.getValidStates();
+        List<StateRec> state = bsc.getValidStates();
         // More states than metadata values - cannot handle this
         if (state.size() > 32) {
             return null;
         }
-        IBlockState[] metavalues = new IBlockState[16];
-        IBlockState[] snowmetavalues = new IBlockState[16];
-        for (IBlockState s : state) {
-            int meta = block.getMetaFromState(s);   // Lookup meta for this state
-            String is_snowy = s.getValue(snowy).toString();
+        StateRec[] metavalues = new StateRec[16];
+        StateRec[] snowmetavalues = new StateRec[16];
+        for (StateRec s : state) {
+            int meta = s.metadata;   // Lookup meta for this state
+            String is_snowy = s.getValue("snowy");
             // If out of range, or duplicate, we cannot handle
             if ((meta < 0) || (meta > 15)) {
                 return null;
@@ -65,10 +59,10 @@ public class SnowyMetadataStateHandler implements IStateHandlerFactory {
         // Fill in any missing metadata with default state
         for (int i = 0; i < metavalues.length; i++) {
             if (metavalues[i] == null) {
-                metavalues[i] = block.getDefaultState();
+                metavalues[i] = bsc.getDefaultState();
             }
             if (snowmetavalues[i] == null) {
-                snowmetavalues[i] = block.getDefaultState();
+                snowmetavalues[i] = bsc.getDefaultState();
             }
         }
         // Return handler object
@@ -79,31 +73,32 @@ public class SnowyMetadataStateHandler implements IStateHandlerFactory {
         private String[] string_values;
         private Map<String, String>[] map_values;
         
-        OurHandler(IBlockState[] states, IBlockState[] snowstates) {
+        @SuppressWarnings("unchecked")
+		OurHandler(StateRec[] states, StateRec[] snowstates) {
             string_values = new String[32];
             map_values = new Map[32];
             // Handle snowy states first
             for (int i = 0; i < 16; i++) {
-                IBlockState bs = snowstates[i];
+                StateRec bs = snowstates[i];
                 HashMap<String, String> m = new HashMap<String,String>();
                 StringBuilder sb = new StringBuilder();
-                for (Entry<IProperty<?>, Comparable<?>> p : bs.getProperties().entrySet()) {
+				for (Entry<String, String> p : bs.getProperties().entrySet()) {
                     if (sb.length() > 0) sb.append(",");
-                    sb.append(p.getKey().getName()).append("=").append(p.getValue().toString());
-                    m.put(p.getKey().getName(), p.getValue().toString());
+                    sb.append(p.getKey()).append("=").append(p.getValue());
+                    m.put(p.getKey(), p.getValue());
                 }
                 map_values[i] = m;
                 string_values[i] = sb.toString();
             }
             // Handle non-snow states second
             for (int i = 0; i < 16; i++) {
-                IBlockState bs = states[i];
+                StateRec bs = states[i];
                 HashMap<String, String> m = new HashMap<String,String>();
                 StringBuilder sb = new StringBuilder();
-                for (Entry<IProperty<?>, Comparable<?>> p : bs.getProperties().entrySet()) {
+                for (Entry<String, String> p : bs.getProperties().entrySet()) {
                     if (sb.length() > 0) sb.append(",");
-                    sb.append(p.getKey().getName()).append("=").append(p.getValue().toString());
-                    m.put(p.getKey().getName(), p.getValue().toString());
+                    sb.append(p.getKey()).append("=").append(p.getValue());
+                    m.put(p.getKey(), p.getValue());
                 }
                 map_values[16+i] = m;
                 string_values[16+i] = sb.toString();

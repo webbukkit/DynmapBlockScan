@@ -5,12 +5,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import com.google.common.collect.ImmutableMap;
-
-import net.minecraft.block.Block;
-import net.minecraft.block.properties.IProperty;
-import net.minecraft.block.state.BlockStateContainer;
-import net.minecraft.block.state.IBlockState;
+import org.dynmap.blockscan.statehandlers.StateContainer.StateRec;
 
 /**
  * This state handler is used for blocks which use the connection pattern of redstone wire,
@@ -30,35 +25,34 @@ public class RedstoneWireStateHandler implements IStateHandlerFactory {
     private static final int WEST_OFF = 1;
     
     /**
-     * This method is used to examining the BlockStateContainer of a block to determine if the state mapper can handle the given block
-     * @param block - Block object
-     * @param bsc - BlockStateContainer object
+     * This method is used to examining the StateContainer of a block to determine if the state mapper can handle the given block
+     * @param bsc - StateContainer object
      * @returns IStateHandler if the handler factory believes it can handle this block type, null otherwise
      */
-    public IStateHandler canHandleBlockState(Block block, BlockStateContainer bsc) {
-        IProperty<?> power = IStateHandlerFactory.findMatchingProperty(bsc, "power", POWER);
-        if (power == null) {
+    public IStateHandler canHandleBlockState(StateContainer bsc) {
+        boolean power = IStateHandlerFactory.findMatchingProperty(bsc, "power", POWER);
+        if (!power) {
             return null;
         }
-        IProperty<?> north = IStateHandlerFactory.findMatchingProperty(bsc, "north", SIDE);
-        IProperty<?> south = IStateHandlerFactory.findMatchingProperty(bsc, "south", SIDE);
-        IProperty<?> east = IStateHandlerFactory.findMatchingProperty(bsc, "east", SIDE);
-        IProperty<?> west = IStateHandlerFactory.findMatchingProperty(bsc, "west", SIDE);
-        if ((north == null) || (south == null) || (east == null) || (west == null)) {
+        boolean north = IStateHandlerFactory.findMatchingProperty(bsc, "north", SIDE);
+        boolean south = IStateHandlerFactory.findMatchingProperty(bsc, "south", SIDE);
+        boolean east = IStateHandlerFactory.findMatchingProperty(bsc, "east", SIDE);
+        boolean west = IStateHandlerFactory.findMatchingProperty(bsc, "west", SIDE);
+        if ((!north) || (!south) || (!east) || (!west)) {
             return null;
         }
-        List<IBlockState> state = bsc.getValidStates();
+        List<StateRec> state = bsc.getValidStates();
         // Wrong number of valid states?
         if (state.size() != STATECNT) {
             return null;
         }
-        IBlockState[] metavalues = new IBlockState[STATECNT];
-        for (IBlockState s : state) {
-            int index = Integer.parseInt(s.getValue(power).toString()) * POWER_OFF;
-            index += getSideIndex(s.getValue(north).toString()) * NORTH_OFF;
-            index += getSideIndex(s.getValue(south).toString()) * SOUTH_OFF;
-            index += getSideIndex(s.getValue(east).toString()) * EAST_OFF;
-            index += getSideIndex(s.getValue(west).toString()) * WEST_OFF;
+        StateRec[] metavalues = new StateRec[STATECNT];
+        for (StateRec s : state) {
+            int index = Integer.parseInt(s.getValue("power")) * POWER_OFF;
+            index += getSideIndex(s.getValue("north")) * NORTH_OFF;
+            index += getSideIndex(s.getValue("south")) * SOUTH_OFF;
+            index += getSideIndex(s.getValue("east")) * EAST_OFF;
+            index += getSideIndex(s.getValue("west")) * WEST_OFF;
             metavalues[index] = s;
         }
         // Return handler object
@@ -77,17 +71,18 @@ public class RedstoneWireStateHandler implements IStateHandlerFactory {
         private String[] string_values;
         private Map<String, String>[] map_values;
         
-        OurHandler(IBlockState[] states) {
+        @SuppressWarnings("unchecked")
+		OurHandler(StateRec[] states) {
             string_values = new String[STATECNT];
             map_values = new Map[STATECNT];
             for (int i = 0; i < STATECNT; i++) {
-                IBlockState bs = states[i];
+                StateRec bs = states[i];
                 HashMap<String, String> m = new HashMap<String,String>();
                 StringBuilder sb = new StringBuilder();
-                for (Entry<IProperty<?>, Comparable<?>> p : bs.getProperties().entrySet()) {
+                for (Entry<String, String> p : bs.getProperties().entrySet()) {
                     if (sb.length() > 0) sb.append(",");
-                    sb.append(p.getKey().getName()).append("=").append(p.getValue().toString());
-                    m.put(p.getKey().getName(), p.getValue().toString());
+                    sb.append(p.getKey()).append("=").append(p.getValue());
+                    m.put(p.getKey(), p.getValue());
                 }
                 map_values[i] = m;
                 string_values[i] = sb.toString();

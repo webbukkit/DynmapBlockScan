@@ -5,12 +5,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import com.google.common.collect.ImmutableMap;
-
-import net.minecraft.block.Block;
-import net.minecraft.block.properties.IProperty;
-import net.minecraft.block.state.BlockStateContainer;
-import net.minecraft.block.state.IBlockState;
+import org.dynmap.blockscan.statehandlers.StateContainer.StateRec;
 
 /**
  * This state handler is used for blocks which preserve a simple 1-1 correlation between 
@@ -23,28 +18,27 @@ public class StairMetadataStateHandler implements IStateHandlerFactory {
     private static final String[] SHAPES = IStateHandlerFactory.stairShapeValues;
     
     /** 
-     * This method is used to examining the BlockStateContainer of a block to determine if the state mapper can handle the given block
-     * @param block - Block object
-     * @param bsc - BlockStateContainer object
+     * This method is used to examining the StateContainer of a block to determine if the state mapper can handle the given block
+     * @param bsc - StateContainer object
      * @returns IStateHandler if the handler factory believes it can handle this block type, null otherwise
      */
-    public IStateHandler canHandleBlockState(Block block, BlockStateContainer bsc) {
-        IProperty<?> shape = IStateHandlerFactory.findMatchingProperty(bsc, "shape", SHAPES);
-        if (shape == null) {
+    public IStateHandler canHandleBlockState(StateContainer bsc) {
+        boolean shape = IStateHandlerFactory.findMatchingProperty(bsc, "shape", SHAPES);
+        if (!shape) {
             return null;
         }
         // Make sure we have facing and half too - to be sure it's a stair
         if ((bsc.getProperty("facing") == null) || (bsc.getProperty("half") == null)) {
             return null;
         }
-        List<IBlockState> state = bsc.getValidStates();
-        IBlockState[][] metavalues = new IBlockState[16][];
+        List<StateRec> state = bsc.getValidStates();
+        StateRec[][] metavalues = new StateRec[16][];
         for (int i = 0; i < 16; i++) {
-            metavalues[i] = new IBlockState[SHAPES.length];
+            metavalues[i] = new StateRec[SHAPES.length];
         }
-        for (IBlockState s : state) {
-            int meta = block.getMetaFromState(s);   // Lookup meta for this state
-            int shapeval = getShapeIndex(s.getValue(shape).toString());
+        for (StateRec s : state) {
+            int meta = s.metadata;   // Lookup meta for this state
+            int shapeval = getShapeIndex(s.getValue("shape"));
             // If out of range, or duplicate, we cannot handle
             if ((meta < 0) || (meta > 15)) {
                 return null;
@@ -60,7 +54,7 @@ public class StairMetadataStateHandler implements IStateHandlerFactory {
         for (int i = 0; i < metavalues.length; i++) {
             for (int j = 0; j < SHAPES.length; j++) {
                 if (metavalues[i][j] == null) {
-                    metavalues[i][j] = block.getDefaultState();
+                    metavalues[i][j] = bsc.getDefaultState();
                 }
             }
         }
@@ -81,18 +75,19 @@ public class StairMetadataStateHandler implements IStateHandlerFactory {
         private String[] string_values;
         private Map<String, String>[] map_values;
         
-        OurHandler(IBlockState[][] states) {
+        @SuppressWarnings("unchecked")
+		OurHandler(StateRec[][] states) {
             string_values = new String[16*SHAPES.length];
             map_values = new Map[16*SHAPES.length];
             for (int i = 0; i < 16; i++) {
                 for (int j = 0; j < SHAPES.length; j++) {
-                    IBlockState bs = states[i][j];
+                    StateRec bs = states[i][j];
                     HashMap<String, String> m = new HashMap<String,String>();
                     StringBuilder sb = new StringBuilder();
-                    for (Entry<IProperty<?>, Comparable<?>> p : bs.getProperties().entrySet()) {
+                    for (Entry<String, String> p : bs.getProperties().entrySet()) {
                         if (sb.length() > 0) sb.append(",");
-                        sb.append(p.getKey().getName()).append("=").append(p.getValue().toString());
-                        m.put(p.getKey().getName(), p.getValue().toString());
+                        sb.append(p.getKey()).append("=").append(p.getValue());
+                        m.put(p.getKey(), p.getValue());
                     }
                     map_values[16*j + i] = m;
                     string_values[16*j + i] = sb.toString();

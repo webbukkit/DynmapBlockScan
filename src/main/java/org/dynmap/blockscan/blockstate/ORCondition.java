@@ -2,6 +2,7 @@ package org.dynmap.blockscan.blockstate;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 // Variant of condition based on OR followed by list of base conditions
 public class ORCondition implements Condition {
@@ -20,5 +21,11 @@ public class ORCondition implements Condition {
 				return true;
 		}
 		return false;
+	}
+	// Add distinct property keys to set
+	public void addPropKeys(Set<String> props) {
+		for (BaseCondition c : conditions) {
+			c.addPropKeys(props);
+		}
 	}
 }

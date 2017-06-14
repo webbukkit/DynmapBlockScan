@@ -4,6 +4,7 @@ import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Set;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.gson.JsonArray;
@@ -17,6 +18,8 @@ import com.google.gson.JsonParseException;
 public interface Condition {
 	// Check for condition match : matches if any values in condition match corresponding values in provided properties
 	public boolean matches(Map<String, String> props);
+	// Add distinct property keys to set
+	public void addPropKeys(Set<String> props);
 	
 	// Custom deserializer to handle distinction between BaseCondition, ANDCondition and ORCondition
     public static class Deserializer implements JsonDeserializer<Condition> {

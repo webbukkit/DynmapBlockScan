@@ -2,6 +2,7 @@ package org.dynmap.blockscan.blockstate;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 // Variant of condition based on AND followed by list of base conditions
 public class ANDCondition implements Condition {
@@ -20,5 +21,11 @@ public class ANDCondition implements Condition {
 				return false;
 		}
 		return true;
+	}
+	// Add distinct property keys to set
+	public void addPropKeys(Set<String> props) {
+		for (BaseCondition c : conditions) {
+			c.addPropKeys(props);
+		}
 	}
 }

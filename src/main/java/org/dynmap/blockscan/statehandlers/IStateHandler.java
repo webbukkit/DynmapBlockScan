@@ -2,9 +2,6 @@ package org.dynmap.blockscan.statehandlers;
 
 import java.util.Map;
 
-import net.minecraft.block.Block;
-import net.minecraft.block.state.BlockStateContainer;
-
 /**
  * This interface is used to define 'state handlers' for Dynmap
  * These are tools for mapping map data to corresponding BlockState selectors for a given type of blocks

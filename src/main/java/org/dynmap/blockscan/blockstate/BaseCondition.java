@@ -1,6 +1,7 @@
 package org.dynmap.blockscan.blockstate;
 
 import java.util.Map;
+import java.util.Set;
 import java.util.Map.Entry;
 
 import com.google.common.collect.ImmutableMap;
@@ -92,5 +93,9 @@ public class BaseCondition implements Condition {
 			}
 		}
 		return true;
+	}
+	// Add distinct property keys to set
+	public void addPropKeys(Set<String> props) {
+		props.addAll(keyValuePairs.keySet());
 	}
 }

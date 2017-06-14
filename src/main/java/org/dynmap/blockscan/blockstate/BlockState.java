@@ -1,7 +1,8 @@
 package org.dynmap.blockscan.blockstate;
 
+import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
+import java.util.Set;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -38,5 +39,22 @@ public class BlockState {
 			GSON = g;
 		}
 		return g;
+	}
+	// Get render properties
+	public Set<String> getRenderProps() {
+		HashSet<String> props = new HashSet<String>();
+		if (variants != null) {
+			for (BaseCondition cond : variants.map.keySet()) {
+				cond.addPropKeys(props);
+			}
+		}
+		if (multipart != null) {
+			for (Multipart mp : multipart) {
+				if (mp.when != null) {
+					mp.when.addPropKeys(props);
+				}
+			}
+		}
+		return props;
 	}
 }

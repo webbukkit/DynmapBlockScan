@@ -5,12 +5,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import com.google.common.collect.ImmutableMap;
-
-import net.minecraft.block.Block;
-import net.minecraft.block.properties.IProperty;
-import net.minecraft.block.state.BlockStateContainer;
-import net.minecraft.block.state.IBlockState;
+import org.dynmap.blockscan.statehandlers.StateContainer.StateRec;
 
 /**
  * This state handler is used for blocks which preserve a simple 1-1 correlation between 
@@ -20,20 +15,19 @@ import net.minecraft.block.state.IBlockState;
  */
 public class SimpleMetadataStateHandler implements IStateHandlerFactory {
     /**
-     * This method is used to examining the BlockStateContainer of a block to determine if the state mapper can handle the given block
-     * @param block - Block object
-     * @param bsc - BlockStateContainer object
+     * This method is used to examining the StateContainer of a block to determine if the state mapper can handle the given block
+     * @param bsc - StateContainer object
      * @returns IStateHandler if the handler factory believes it can handle this block type, null otherwise
      */
-    public IStateHandler canHandleBlockState(Block block, BlockStateContainer bsc) {
-        List<IBlockState> state = bsc.getValidStates();
+    public IStateHandler canHandleBlockState(StateContainer bsc) {
+        List<StateRec> state = bsc.getValidStates();
         // More states than metadata values - cannot handle this
         if (state.size() > 16) {
             return null;
         }
-        IBlockState[] metavalues = new IBlockState[16];
-        for (IBlockState s : state) {
-            int meta = block.getMetaFromState(s);   // Lookup meta for this state
+        StateRec[] metavalues = new StateRec[16];
+        for (StateRec s : state) {
+            int meta = s.metadata;   // Lookup meta for this state
             // If out of range, or duplicate, we cannot handle
             if ((meta < 0) || (meta > 15) || (metavalues[meta] != null)) {
                 return null;
@@ -43,7 +37,7 @@ public class SimpleMetadataStateHandler implements IStateHandlerFactory {
         // Fill in any missing metadata with default state
         for (int i = 0; i < metavalues.length; i++) {
             if (metavalues[i] == null) {
-                metavalues[i] = block.getDefaultState();
+                metavalues[i] = bsc.getDefaultState();
             }
         }
         // Return handler object
@@ -54,17 +48,18 @@ public class SimpleMetadataStateHandler implements IStateHandlerFactory {
         private String[] string_values;
         private Map<String, String>[] map_values;
         
-        OurHandler(IBlockState[] states) {
+        @SuppressWarnings("unchecked")
+		OurHandler(StateRec[] states) {
             string_values = new String[16];
             map_values = new Map[16];
             for (int i = 0; i < 16; i++) {
-                IBlockState bs = states[i];
+                StateRec bs = states[i];
                 HashMap<String, String> m = new HashMap<String,String>();
                 StringBuilder sb = new StringBuilder();
-                for (Entry<IProperty<?>, Comparable<?>> p : bs.getProperties().entrySet()) {
+                for (Entry<String, String> p : bs.getProperties().entrySet()) {
                     if (sb.length() > 0) sb.append(",");
-                    sb.append(p.getKey().getName()).append("=").append(p.getValue().toString());
-                    m.put(p.getKey().getName(), p.getValue().toString());
+                    sb.append(p.getKey()).append("=").append(p.getValue());
+                    m.put(p.getKey(), p.getValue());
                 }
                 map_values[i] = m;
                 string_values[i] = sb.toString();
