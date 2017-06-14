@@ -5,12 +5,17 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map.Entry;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.dynmap.blockscan.blockstate.BaseCondition;
 import org.dynmap.blockscan.blockstate.BlockState;
+import org.dynmap.blockscan.blockstate.Multipart;
+import org.dynmap.blockscan.blockstate.VariantList;
 import org.dynmap.blockscan.statehandlers.BedMetadataStateHandler;
 import org.dynmap.blockscan.statehandlers.IStateHandler;
 import org.dynmap.blockscan.statehandlers.IStateHandlerFactory;
@@ -20,6 +25,7 @@ import org.dynmap.blockscan.statehandlers.SnowyMetadataStateHandler;
 import org.dynmap.blockscan.statehandlers.StairMetadataStateHandler;
 
 import com.google.common.base.Charsets;
+import com.google.common.collect.ImmutableMap;
 import com.google.gson.Gson;
 
 import org.dynmap.blockscan.statehandlers.DoorStateHandler;
@@ -89,15 +95,15 @@ public class DynmapBlockScanPlugin
                 logger.info("  NO MATCHING HANDLER");
             }
             Collection<IProperty<?>> props = bsc.getProperties();
-            for (IBlockState valid : bsc.getValidStates()) {
-                StringBuilder sb = new StringBuilder();
-                for(IProperty<?> p : props) {
-                    if (sb.length() > 0)
-                        sb.append(",");
-                    sb.append(p.getName()).append("=").append(valid.getValue(p));
-                }
-                logger.info(String.format("  State %s: meta=%d, rendertype=%s", sb.toString(), b.getMetaFromState(valid), valid.getRenderType()));
-            }
+            //for (IBlockState valid : bsc.getValidStates()) {
+            //    StringBuilder sb = new StringBuilder();
+            //    for(IProperty<?> p : props) {
+            //        if (sb.length() > 0)
+            //            sb.append(",");
+            //        sb.append(p.getName()).append("=").append(valid.getValue(p));
+            //    }
+            //    logger.info(String.format("  State %s: meta=%d, rendertype=%s", sb.toString(), b.getMetaFromState(valid), valid.getRenderType()));
+            //}
             // Try to find blockstate file
             String modid = rl.getResourceDomain();
             String path = "assets/" + modid + "/blockstates/" + rl.getResourcePath() + ".json";
@@ -111,7 +117,14 @@ public class DynmapBlockScanPlugin
 				} catch (IOException e) {
 				}
             	if (bs != null) {
-            		logger.info(bs.toString());
+            		//logger.info(bs.toString());
+            		
+            		// Now, loop through our IBlockStates and see how we do on mappings
+                    for (IBlockState valid : bsc.getValidStates()) {
+                    	ImmutableMap<String, String> state_props = fromIBlockState(valid);
+                    	List<VariantList> vlist = getMatchingVariants(bs, state_props);
+                    	logger.info("State " + state_props + " returned variants " + vlist);
+                    }
             	}
             	else {
             		logger.info("Failed to load blockstate!");
@@ -145,7 +158,45 @@ public class DynmapBlockScanPlugin
         }
         return null;
     }
+    
+    
+    // Build ImmutableMap<String, String> from properties in IBlockState
+    public ImmutableMap<String, String> fromIBlockState(IBlockState bs) {
+    	ImmutableMap.Builder<String,String> bld = ImmutableMap.builder();
+    	for (Entry<IProperty<?>, Comparable<?>> x : bs.getProperties().entrySet()) {
+    		bld.put(x.getKey().getName(), x.getValue().toString());
+    	}
+    	return bld.build();
+    }
 
+    // Build list of Variant lists from parsed block state and match given properties
+    public List<VariantList> getMatchingVariants(BlockState blkstate, ImmutableMap<String, String> prop) {
+    	ArrayList<VariantList> vlist = new ArrayList<VariantList>();
+    	
+    	// If bstate has variant list map, walk it - only match first one
+    	if (blkstate.variants != null) {
+    		for (Entry<BaseCondition, org.dynmap.blockscan.blockstate.VariantList> var : blkstate.variants.map.entrySet()) {
+    			if(var.getKey().matches(prop)) {	// Matching property?
+    				// Only one will match for 'variants', so quit
+    				vlist.add(var.getValue());
+    				break;
+    			}
+    		}
+    	}
+    	// If bstate has multipart, walk it - accumulate all matches
+    	if (blkstate.multipart != null) {
+    		for (Multipart mp : blkstate.multipart) {
+    			if (mp.when == null) {	// Unconditional?
+    				vlist.add(mp.apply);	// Add it
+    			}
+    			else if (mp.when.matches(prop)) {	// Conditional matches?
+    				vlist.add(mp.apply);	// Add it
+    			}
+    		}
+    	}
+    	return vlist;
+    }
+    
     public static class OurLog {
         Logger log;
         public static final String DM = "[DynmapBlockScan] ";

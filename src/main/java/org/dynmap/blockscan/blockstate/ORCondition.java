@@ -1,6 +1,7 @@
 package org.dynmap.blockscan.blockstate;
 
 import java.util.List;
+import java.util.Map;
 
 // Variant of condition based on OR followed by list of base conditions
 public class ORCondition implements Condition {
@@ -12,4 +13,12 @@ public class ORCondition implements Condition {
 		return sb.toString();
 	}
 
+	// Check for condition match : matches if any values in condition match corresponding values in provided properties
+	public boolean matches(Map<String, String> props) {
+		for (BaseCondition c : conditions) {
+			if (c.matches(props))
+				return true;
+		}
+		return false;
+	}
 }

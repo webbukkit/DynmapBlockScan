@@ -12,7 +12,7 @@ public class BlockState {
 	private static Gson GSON;
 
 	// "variants" map: key is state string, value is either Variant or list of Variant object (need special parser)
-	public Map<String, VariantList> variants;
+	public VariantListMap variants;
 	// "multipart" list: each record is a MultiPart
 	public List<Multipart> multipart;
 	
@@ -32,7 +32,8 @@ public class BlockState {
 		if (g == null) {
 			GsonBuilder gb = new GsonBuilder();	// Start with builder
 			gb.registerTypeAdapter(VariantList.class, new VariantList.Deserializer()); // Add VariantList handler
-			gb.registerTypeAdapter(Condition.class, new Condition.Deserializer()); // Add Condition handler
+			gb.registerTypeAdapter(VariantListMap.class, new VariantListMap.Deserializer()); // Add VariantListMap handler
+			gb.registerTypeAdapter(Condition.class, new Condition.Deserializer()); // Add Condition handler1
 			g = gb.create();
 			GSON = g;
 		}
