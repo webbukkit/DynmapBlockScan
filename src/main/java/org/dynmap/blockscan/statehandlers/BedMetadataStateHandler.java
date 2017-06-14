@@ -33,27 +33,28 @@ public class BedMetadataStateHandler implements IStateHandlerFactory {
         StateRec[] metavalues = new StateRec[16];
         StateRec[] occupiedmetavalues = new StateRec[16];
         for (StateRec s : state) {
-            int meta = s.metadata;   // Lookup meta for this state
             String is_occupied = s.getValue("occupied");
-            // If out of range, or duplicate, we cannot handle
-            if ((meta < 0) || (meta > 15)) {
-                return null;
-            }
-            else if (is_occupied.equals("false")) {
-                if (metavalues[meta] != null) {
-                    return null;
-                }
-                else {
-                    metavalues[meta] = s;
-                }
-            }
-            else {
-                if (occupiedmetavalues[meta] != null) {
-                    return null;
-                }
-                else {
-                    occupiedmetavalues[meta] = s;
-                }
+            for (int meta : s.metadata) {
+            	// If out of range, or duplicate, we cannot handle
+            	if ((meta < 0) || (meta > 15)) {
+            		return null;
+            	}
+            	else if (is_occupied.equals("false")) {
+            		if (metavalues[meta] != null) {
+            			return null;
+            		}
+            		else {
+            			metavalues[meta] = s;
+            		}
+            	}
+            	else {
+            		if (occupiedmetavalues[meta] != null) {
+            			return null;
+            		}
+            		else {
+            			occupiedmetavalues[meta] = s;
+            		}
+            	}
             }
         }
         // Fill in any missing metadata with default state

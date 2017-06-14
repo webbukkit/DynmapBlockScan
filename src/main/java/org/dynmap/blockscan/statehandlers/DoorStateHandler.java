@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import org.dynmap.blockscan.DynmapBlockScanPlugin;
 import org.dynmap.blockscan.statehandlers.StateContainer.StateRec;
 
 /**
@@ -24,8 +25,9 @@ public class DoorStateHandler implements IStateHandlerFactory {
      */
     public IStateHandler canHandleBlockState(StateContainer bsc) {
         List<StateRec> state = bsc.getValidStates();
-        // Doors have 5 properties and 64 valid states
-        if ((bsc.getProperties().size() != 5) || (state.size() != 64)) {
+        // Doors have 4 rendering properties and 32 valid states
+        if ((bsc.getProperties().size() != 4) || (state.size() != 32)) {
+        	DynmapBlockScanPlugin.logger.info("props=" + bsc.getProperties() + ", states=" + state + ", size=" + state.size());
             return null;
         }
         boolean facing = IStateHandlerFactory.findMatchingProperty(bsc, "facing", FACING);
@@ -35,16 +37,14 @@ public class DoorStateHandler implements IStateHandlerFactory {
             return null;
         }
         boolean open = IStateHandlerFactory.findMatchingBooleanProperty(bsc, "open");
-        boolean powered = IStateHandlerFactory.findMatchingBooleanProperty(bsc, "powered");
-        if ((!open) || (!powered)) {
+        if (!open) {
             return null;
         }
-        StateRec[] metavalues = new StateRec[64];
+        StateRec[] metavalues = new StateRec[32];
         for (StateRec s : state) {
             int idx = getFacingIndex(s.getValue("facing")) +
                     getHingeIndex(s.getValue("hinge")) +
                     getHalfIndex(s.getValue("half")) +
-                    getPoweredIndex(s.getValue("powered")) +
                     getOpenIndex(s.getValue("open"));
             metavalues[idx] = s;
         }
@@ -55,7 +55,7 @@ public class DoorStateHandler implements IStateHandlerFactory {
     private static int getFacingIndex(String value) {
         for (int i = 0; i < FACING.length; i++) {
             if (FACING[i].equals(value)) {
-                return 16 * i;
+                return 8 * i;
             }
         }
         return 0;
@@ -64,7 +64,7 @@ public class DoorStateHandler implements IStateHandlerFactory {
     private static int getHingeIndex(String value) {
         for (int i = 0; i < HINGE.length; i++) {
             if (HINGE[i].equals(value)) {
-                return 4 * i;
+                return 2 * i;
             }
         }
         return 0;
@@ -73,15 +73,9 @@ public class DoorStateHandler implements IStateHandlerFactory {
     private static int getHalfIndex(String value) {
         for (int i = 0; i < HALF.length; i++) {
             if (HALF[i].equals(value)) {
-                return 8 * i;
+                return 4 * i;
             }
         }
-        return 0;
-    }
-    // Return index for given powered value (offset by 1 bits)
-    private static int getPoweredIndex(String value) {
-        if (value.equals("true"))
-            return 2;
         return 0;
     }
     // Return index for given open value (offset by 0 bits)
@@ -97,9 +91,9 @@ public class DoorStateHandler implements IStateHandlerFactory {
         
         @SuppressWarnings("unchecked")
 		OurHandler(StateRec[] states) {
-            string_values = new String[64];
-            map_values = new Map[64];
-            for (int i = 0; i < 64; i++) {
+            string_values = new String[32];
+            map_values = new Map[32];
+            for (int i = 0; i < 32; i++) {
                 StateRec bs = states[i];
                 HashMap<String, String> m = new HashMap<String,String>();
                 StringBuilder sb = new StringBuilder();

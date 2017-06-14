@@ -48,11 +48,22 @@ public class ForgeStateContainer extends StateContainer {
 				}
 			}
 			StateRec sr = new StateRec(meta, bld.build());
-			if (records.contains(sr) == false) {
+			int prev_sr = records.indexOf(sr);
+			if (prev_sr < 0) {
 				if (bs.equals(defstate)) {
 					this.defStateIndex = records.size();
 				}
 				records.add(sr);
+			}
+			else {
+				StateRec prev = records.get(prev_sr);
+				if (prev.hasMeta(meta) == false) {
+					sr = new StateRec(prev, meta);
+					records.set(prev_sr, sr);
+					if (bs.equals(defstate)) {
+						this.defStateIndex = prev_sr;
+					}
+				}
 			}
 		}
 	}

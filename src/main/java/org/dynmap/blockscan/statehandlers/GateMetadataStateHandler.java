@@ -33,27 +33,28 @@ public class GateMetadataStateHandler implements IStateHandlerFactory {
         StateRec[] metavalues = new StateRec[16];
         StateRec[] inwallmetavalues = new StateRec[16];
         for (StateRec s : state) {
-            int meta = s.metadata;   // Lookup meta for this state
             String is_inwall = s.getValue("in_wall");
-            // If out of range, or duplicate, we cannot handle
-            if ((meta < 0) || (meta > 15)) {
-                return null;
-            }
-            else if (is_inwall.equals("false")) {
-                if (metavalues[meta] != null) {
-                    return null;
-                }
-                else {
-                    metavalues[meta] = s;
-                }
-            }
-            else {
-                if (inwallmetavalues[meta] != null) {
-                    return null;
-                }
-                else {
-                    inwallmetavalues[meta] = s;
-                }
+            for (int meta : s.metadata) {
+            	// If out of range, or duplicate, we cannot handle
+            	if ((meta < 0) || (meta > 15)) {
+            		return null;
+            	}
+            	else if (is_inwall.equals("false")) {
+            		if (metavalues[meta] != null) {
+            			return null;
+            		}
+            		else {
+            			metavalues[meta] = s;
+            		}
+            	}
+            	else {
+            		if (inwallmetavalues[meta] != null) {
+            			return null;
+            		}
+            		else {
+            			inwallmetavalues[meta] = s;
+            		}
+            	}
             }
         }
         // Fill in any missing metadata with default state

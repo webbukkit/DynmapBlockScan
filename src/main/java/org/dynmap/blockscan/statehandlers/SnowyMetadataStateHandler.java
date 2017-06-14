@@ -33,27 +33,28 @@ public class SnowyMetadataStateHandler implements IStateHandlerFactory {
         StateRec[] metavalues = new StateRec[16];
         StateRec[] snowmetavalues = new StateRec[16];
         for (StateRec s : state) {
-            int meta = s.metadata;   // Lookup meta for this state
             String is_snowy = s.getValue("snowy");
-            // If out of range, or duplicate, we cannot handle
-            if ((meta < 0) || (meta > 15)) {
-                return null;
-            }
-            else if (is_snowy.equals("false")) {
-                if (metavalues[meta] != null) {
-                    return null;
-                }
-                else {
-                    metavalues[meta] = s;
-                }
-            }
-            else {
-                if (snowmetavalues[meta] != null) {
-                    return null;
-                }
-                else {
-                    snowmetavalues[meta] = s;
-                }
+            for (int meta : s.metadata) {
+            	// If out of range, or duplicate, we cannot handle
+            	if ((meta < 0) || (meta > 15)) {
+            		return null;
+            	}
+            	else if (is_snowy.equals("false")) {
+            		if (metavalues[meta] != null) {
+            			return null;
+            		}
+            		else {
+            			metavalues[meta] = s;
+            		}
+            	}
+            	else {
+            		if (snowmetavalues[meta] != null) {
+            			return null;
+            		}
+            		else {
+            			snowmetavalues[meta] = s;
+            		}
+            	}
             }
         }
         // Fill in any missing metadata with default state

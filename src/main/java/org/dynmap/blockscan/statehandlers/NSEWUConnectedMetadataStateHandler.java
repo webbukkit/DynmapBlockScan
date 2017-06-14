@@ -41,21 +41,22 @@ public class NSEWUConnectedMetadataStateHandler implements IStateHandlerFactory 
             metavalues[i] = new StateRec[CONNECTCNT];
         }
         for (StateRec s : state) {
-            int meta = s.metadata;   // Lookup meta for this state
             int index = getBoolIndex(s.getValue("up"), UP_OFF);
             index += getBoolIndex(s.getValue("north"), NORTH_OFF);
             index += getBoolIndex(s.getValue("south"), SOUTH_OFF);            
             index += getBoolIndex(s.getValue("east"), EAST_OFF);
             index += getBoolIndex(s.getValue("west"), WEST_OFF);
-            // If out of range, or duplicate, we cannot handle
-            if ((meta < 0) || (meta > 15)) {
-                return null;
-            }
-            if (metavalues[meta][index] != null) {
-                return null;
-            }
-            else {
-                metavalues[meta][index] = s;
+            for (int meta : s.metadata) {
+            	// If out of range, or duplicate, we cannot handle
+            	if ((meta < 0) || (meta > 15)) {
+            		return null;
+            	}
+            	if (metavalues[meta][index] != null) {
+            		return null;
+            	}
+            	else {
+            		metavalues[meta][index] = s;
+            	}
             }
         }
         // Fill in any missing metadata with default state

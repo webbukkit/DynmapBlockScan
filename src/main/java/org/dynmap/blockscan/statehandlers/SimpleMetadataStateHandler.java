@@ -27,12 +27,13 @@ public class SimpleMetadataStateHandler implements IStateHandlerFactory {
         }
         StateRec[] metavalues = new StateRec[16];
         for (StateRec s : state) {
-            int meta = s.metadata;   // Lookup meta for this state
-            // If out of range, or duplicate, we cannot handle
-            if ((meta < 0) || (meta > 15) || (metavalues[meta] != null)) {
-                return null;
-            }
-            metavalues[meta] = s;
+        	for (int meta : s.metadata) {
+        		// If out of range, or duplicate, we cannot handle
+        		if ((meta < 0) || (meta > 15) || (metavalues[meta] != null)) {
+        			return null;
+        		}
+        		metavalues[meta] = s;
+        	}
         }
         // Fill in any missing metadata with default state
         for (int i = 0; i < metavalues.length; i++) {

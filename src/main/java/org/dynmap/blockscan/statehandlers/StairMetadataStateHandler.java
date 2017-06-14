@@ -37,17 +37,18 @@ public class StairMetadataStateHandler implements IStateHandlerFactory {
             metavalues[i] = new StateRec[SHAPES.length];
         }
         for (StateRec s : state) {
-            int meta = s.metadata;   // Lookup meta for this state
             int shapeval = getShapeIndex(s.getValue("shape"));
-            // If out of range, or duplicate, we cannot handle
-            if ((meta < 0) || (meta > 15)) {
-                return null;
-            }
-            if (metavalues[meta][shapeval] != null) {
-                return null;
-            }
-            else {
-                metavalues[meta][shapeval] = s;
+            for (int meta : s.metadata) {
+            	// If out of range, or duplicate, we cannot handle
+            	if ((meta < 0) || (meta > 15)) {
+            		return null;
+            	}
+            	if (metavalues[meta][shapeval] != null) {
+            		return null;
+            	}
+            	else {
+            		metavalues[meta][shapeval] = s;
+            	}
             }
         }
         // Fill in any missing metadata with default state

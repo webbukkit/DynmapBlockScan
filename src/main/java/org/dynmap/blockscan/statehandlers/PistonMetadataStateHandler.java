@@ -33,27 +33,28 @@ public class PistonMetadataStateHandler implements IStateHandlerFactory {
         StateRec[] metavalues = new StateRec[16];
         StateRec[] shortpmetavalues = new StateRec[16];
         for (StateRec s : state) {
-            int meta = s.metadata;   // Lookup meta for this state
             String is_shortp = s.getValue("short");
-            // If out of range, or duplicate, we cannot handle
-            if ((meta < 0) || (meta > 15)) {
-                return null;
-            }
-            else if (is_shortp.equals("false")) {
-                if (metavalues[meta] != null) {
-                    return null;
-                }
-                else {
-                    metavalues[meta] = s;
-                }
-            }
-            else {
-                if (shortpmetavalues[meta] != null) {
-                    return null;
-                }
-                else {
-                    shortpmetavalues[meta] = s;
-                }
+            for (int meta : s.metadata) {
+            	// If out of range, or duplicate, we cannot handle
+            	if ((meta < 0) || (meta > 15)) {
+            		return null;
+            	}
+            	else if (is_shortp.equals("false")) {
+            		if (metavalues[meta] != null) {
+            			return null;
+            		}
+            		else {
+            			metavalues[meta] = s;
+            		}
+            	}
+            	else {
+            		if (shortpmetavalues[meta] != null) {
+            			return null;
+            		}
+            		else {
+            			shortpmetavalues[meta] = s;
+            		}
+            	}
             }
         }
         // Fill in any missing metadata with default state

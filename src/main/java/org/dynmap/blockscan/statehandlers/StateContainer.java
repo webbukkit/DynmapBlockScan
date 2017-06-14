@@ -12,11 +12,19 @@ import com.google.common.collect.ImmutableMap;
 public class StateContainer {
 	public static class StateRec {
 		public final ImmutableMap<String, String> keyValuePairs;
-		public final int metadata;
+		public final int metadata[];
 		
 		public StateRec(int meta, ImmutableMap<String,String> kvp) {
 			keyValuePairs = kvp;
-			metadata = meta;
+			metadata = new int[] { meta };
+		}
+		
+		public StateRec(StateRec prev, int new_meta) {
+			keyValuePairs = prev.keyValuePairs;
+			int[] newmeta = new int[prev.metadata.length + 1];
+			System.arraycopy(prev.metadata, 0, newmeta, 0, prev.metadata.length);
+			newmeta[prev.metadata.length] = new_meta;
+			metadata = newmeta;
 		}
 		
 		@Override
@@ -24,14 +32,22 @@ public class StateContainer {
 			if (this == obj) return true;
 			if (obj instanceof StateRec) {
 				StateRec sr = (StateRec) obj;
-				return (sr.metadata == metadata) && (sr.keyValuePairs.equals(keyValuePairs));
+				return (sr.keyValuePairs.equals(keyValuePairs));
+			}
+			return false;
+		}
+		
+		public boolean hasMeta(int meta) {
+			for (int i = 0; i < metadata.length; i++) {
+				if (metadata[i] == meta)
+					return true;
 			}
 			return false;
 		}
 		
 		@Override
 		public int hashCode() {
-			return (metadata << 16) ^ keyValuePairs.hashCode();
+			return keyValuePairs.hashCode();
 		}
 		
 		public String getValue(String prop) {
