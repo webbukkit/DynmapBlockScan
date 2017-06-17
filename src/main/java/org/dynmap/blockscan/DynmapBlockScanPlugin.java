@@ -6,12 +6,15 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.dynmap.blockscan.BlockStateOverrides.BlockStateOverride;
 import org.dynmap.blockscan.blockstate.BaseCondition;
 import org.dynmap.blockscan.blockstate.BlockState;
 import org.dynmap.blockscan.blockstate.Multipart;
@@ -24,10 +27,13 @@ import org.dynmap.blockscan.statehandlers.SimpleMetadataStateHandler;
 import org.dynmap.blockscan.statehandlers.SnowyMetadataStateHandler;
 import org.dynmap.blockscan.statehandlers.StairMetadataStateHandler;
 import org.dynmap.blockscan.statehandlers.StateContainer;
+import org.dynmap.blockscan.statehandlers.StateContainer.StateRec;
 
 import com.google.common.base.Charsets;
 import com.google.common.collect.ImmutableMap;
 import com.google.gson.Gson;
+
+import jline.internal.Log;
 
 import org.dynmap.blockscan.statehandlers.DoorStateHandler;
 import org.dynmap.blockscan.statehandlers.ForgeStateContainer;
@@ -41,6 +47,7 @@ import net.minecraft.block.properties.IProperty;
 import net.minecraft.block.state.BlockStateContainer;
 import net.minecraft.block.state.IBlockState;
 import net.minecraft.server.MinecraftServer;
+import net.minecraft.util.IStringSerializable;
 import net.minecraft.util.ResourceLocation;
 import net.minecraftforge.fml.common.Loader;
 import net.minecraftforge.fml.common.ModContainer;
@@ -49,6 +56,13 @@ public class DynmapBlockScanPlugin
 {
     public static OurLog logger = new OurLog();
     public static DynmapBlockScanPlugin plugin;
+    
+    public static class BlockRecord {
+    	public StateContainer sc;
+    	public Map<StateRec, List<VariantList>> varList;	// Model references for block
+    	public Set<String> renderProps;	// Set of render properties
+    	public IStateHandler handler;		// Best handler
+    }
     
     private IStateHandlerFactory[] state_handler = {
         new NSEWConnectedMetadataStateHandler(),
@@ -77,60 +91,63 @@ public class DynmapBlockScanPlugin
     }
     public void serverStarted() {
         logger.info("serverStarted()");
+        
+        // Load override resources
+        InputStream override_str = openResource("dynmapblockscan", "blockStateOverrides.json");
+        BlockStateOverrides overrides;
+        if (override_str != null) {
+        	Reader rdr = new InputStreamReader(override_str, Charsets.UTF_8);
+        	Gson parse = new Gson();
+        	overrides = parse.fromJson(rdr, BlockStateOverrides.class);
+        	try {
+				override_str.close();
+			} catch (IOException e) {
+			}
+        }
+        else {
+        	logger.info("Failed to load block overrides");
+        	overrides = new BlockStateOverrides();
+        }
+
+        Map<String, BlockRecord> blockRecords = new HashMap<String, BlockRecord>();
         // Scan blocks and block states
         for (Block b : Block.REGISTRY) {
             ResourceLocation rl = b.getRegistryName();
             logger.info(String.format("Block %s: %d", rl, Block.getIdFromBlock(b)));
             BlockStateContainer bsc = b.getBlockState();
-            BlockState blockstate = null;
+            // Generate property value map
+            Map<String, List<String>> propMap = buildPropoertMap(bsc);
             // Try to find blockstate file
-            String modid = rl.getResourceDomain();
-            String path = "assets/" + modid + "/blockstates/" + rl.getResourcePath() + ".json";
-            InputStream is = openResource(modid, path);
-            if (is != null) {	// Found it?
-            	Reader rdr = new InputStreamReader(is, Charsets.UTF_8);
-            	Gson parse = BlockState.buildParser();	// Get parser
-            	blockstate = parse.fromJson(rdr, BlockState.class);
-            	try {
-					is.close();
-				} catch (IOException e) {
-				}
-            	if (blockstate == null) {
-            		logger.info("Failed to load blockstate!");
-            	}
-            }
-            else {
-        		logger.info("Failed to open blockstate " + path + " for modid " + modid);
-            }
-            
-            Set<String> renderprops = null;
+            BlockState blockstate = loadBlockState(rl.getResourceDomain(), rl.getResourcePath(), overrides, propMap);
+            // Build block record
+            BlockRecord br = new BlockRecord();
             // Process blockstate
         	if (blockstate != null) {
-        		//logger.info(blockstate.toString());
-        		
-        		// Now, loop through our IBlockStates and see how we do on mappings
-                for (IBlockState valid : bsc.getValidStates()) {
-                	ImmutableMap<String, String> state_props = fromIBlockState(valid);
-                	List<VariantList> vlist = getMatchingVariants(blockstate, state_props);
-                	logger.info("State " + state_props + " returned variants " + vlist);
-                }
-                renderprops = blockstate.getRenderProps();
+                br.renderProps = blockstate.getRenderProps();
         	}
         	// Build generic block state container for block
-        	StateContainer sc = new ForgeStateContainer(b, bsc, renderprops);
-        	//logger.info(sc.toString());
+        	br.sc = new ForgeStateContainer(b, br.renderProps, propMap);
+        	if (blockstate != null) {
+            	br.varList = new HashMap<StateRec, List<VariantList>>();
+        		// Loop through rendering states in state container
+        		for (StateRec sr : br.sc.getValidStates()) {
+        			List<VariantList> vlist = blockstate.getMatchingVariants(sr.getProperties());
+        			br.varList.put(sr, vlist);
+        		}
+        	}
             // Check for matching handler
-            IStateHandler handler = null;
+            br.handler = null;
             for (IStateHandlerFactory f : state_handler) {
-              	handler = f.canHandleBlockState(sc);
-                if (handler != null) {
-                    logger.info("  Handled by " + handler.getName());
+              	br.handler = f.canHandleBlockState(br.sc);
+                if (br.handler != null) {
                     break;
                 }
             }
-            if (handler == null) {
-                logger.info("  NO MATCHING HANDLER");
+            if (br.handler == null) {
+                logger.info(rl + ":  NO MATCHING HANDLER");
             }
+            blockRecords.put(rl.toString(), br);
+            
             //Collection<IProperty<?>> props = bsc.getProperties();
             //for (IBlockState valid : bsc.getValidStates()) {
             //    StringBuilder sb = new StringBuilder();
@@ -144,7 +161,7 @@ public class DynmapBlockScanPlugin
         }
     }
     
-    public InputStream openResource(String modid, String rname) {
+    public static InputStream openResource(String modid, String rname) {
         if (modid != null) {
             ModContainer mc = Loader.instance().getIndexedModList().get(modid);
             Object mod = mc.getMod();
@@ -167,42 +184,90 @@ public class DynmapBlockScanPlugin
         return null;
     }
     
+    public Map<String, List<String>> buildPropoertMap(BlockStateContainer bsc) {
+    	Map<String, List<String>> renderProperties = new HashMap<String, List<String>>();
+		// Build table of render properties and valid values
+		for (IProperty<?> p : bsc.getProperties()) {
+			String pn = p.getName();
+			ArrayList<String> pvals = new ArrayList<String>();
+			for (Comparable<?> val : p.getAllowedValues()) {
+				if (val instanceof IStringSerializable) {
+					pvals.add(((IStringSerializable)val).getName());
+				}
+				else {
+					pvals.add(val.toString());
+				}
+			}
+			renderProperties.put(pn, pvals);
+		}
+		return renderProperties;
+    }
     
     // Build ImmutableMap<String, String> from properties in IBlockState
     public ImmutableMap<String, String> fromIBlockState(IBlockState bs) {
     	ImmutableMap.Builder<String,String> bld = ImmutableMap.builder();
     	for (Entry<IProperty<?>, Comparable<?>> x : bs.getProperties().entrySet()) {
-    		bld.put(x.getKey().getName(), x.getValue().toString());
+    		Comparable<?> v = x.getValue();
+    		if (v instanceof IStringSerializable) {
+    			bld.put(x.getKey().getName(), ((IStringSerializable)v).getName());
+    		}
+    		else {
+    			bld.put(x.getKey().getName(), v.toString());
+    		}
     	}
     	return bld.build();
     }
-
-    // Build list of Variant lists from parsed block state and match given properties
-    public List<VariantList> getMatchingVariants(BlockState blkstate, ImmutableMap<String, String> prop) {
-    	ArrayList<VariantList> vlist = new ArrayList<VariantList>();
+    
+    private static BlockState loadBlockState(String modid, String respath, BlockStateOverrides override, Map<String, List<String>> propMap) {
+    	BlockStateOverride ovr = override.getOverride(modid, respath);
     	
-    	// If bstate has variant list map, walk it - only match first one
-    	if (blkstate.variants != null) {
-    		for (Entry<BaseCondition, org.dynmap.blockscan.blockstate.VariantList> var : blkstate.variants.map.entrySet()) {
-    			if(var.getKey().matches(prop)) {	// Matching property?
-    				// Only one will match for 'variants', so quit
-    				vlist.add(var.getValue());
-    				break;
+    	if (ovr == null) {	// No override
+    		return loadBlockStateFile(modid, respath);
+    	}
+    	else if (ovr.blockStateName != null) {	// Simple override
+    		return loadBlockStateFile(modid, ovr.blockStateName);
+    	}
+    	else if (ovr.baseNameProperty != null) {	// MUltiple files based on base property
+    		List<String> vals = propMap.get(ovr.baseNameProperty);	// Look up defned values
+    		if (vals == null) {
+    			Log.error(String.format("%s:%s : bad baseNameProperty=%s",  modid, respath, ovr.baseNameProperty));;
+    			return null;
+    		}
+    		BlockState bs = new BlockState();
+    		bs.nestedProp = ovr.baseNameProperty;
+    		bs.nestedValueMap = new HashMap<String, BlockState>();
+    		for (String v : vals) {
+    			BlockState bs2 = loadBlockStateFile(modid, v + ovr.nameSuffix);
+    			if (bs2 != null) {
+    				bs.nestedValueMap.put(v,  bs2);
     			}
     		}
+    		return bs;
     	}
-    	// If bstate has multipart, walk it - accumulate all matches
-    	if (blkstate.multipart != null) {
-    		for (Multipart mp : blkstate.multipart) {
-    			if (mp.when == null) {	// Unconditional?
-    				vlist.add(mp.apply);	// Add it
-    			}
-    			else if (mp.when.matches(prop)) {	// Conditional matches?
-    				vlist.add(mp.apply);	// Add it
-    			}
-    		}
-    	}
-    	return vlist;
+
+		return null;
+    }
+    
+    private static BlockState loadBlockStateFile(String modid, String respath) {
+        String path = "assets/" + modid + "/blockstates/" + respath + ".json";
+    	BlockState bs = null;
+        InputStream is = openResource(modid, path);
+        if (is != null) {	// Found it?
+        	Reader rdr = new InputStreamReader(is, Charsets.UTF_8);
+        	Gson parse = BlockState.buildParser();	// Get parser
+        	bs = parse.fromJson(rdr, BlockState.class);
+        	try {
+				is.close();
+			} catch (IOException e) {
+			}
+        	if (bs == null) {
+        		logger.info(String.format("%s:%s : Failed to load blockstate!", modid, path));
+        	}
+        }
+        else {
+    		logger.info(String.format("%s:%s : Failed to open blockstate", modid, path));
+        }
+        return bs;
     }
     
     public static class OurLog {

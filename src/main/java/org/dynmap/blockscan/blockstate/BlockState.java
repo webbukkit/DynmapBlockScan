@@ -1,8 +1,11 @@
 package org.dynmap.blockscan.blockstate;
 
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
+import java.util.Map.Entry;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -16,6 +19,10 @@ public class BlockState {
 	public VariantListMap variants;
 	// "multipart" list: each record is a MultiPart
 	public List<Multipart> multipart;
+	
+	// Property value based nested state mapping
+	public String nestedProp = null;
+	public Map<String, BlockState> nestedValueMap = null;
 	
 	public String toString() {
 		StringBuilder sb = new StringBuilder();
@@ -57,4 +64,47 @@ public class BlockState {
 		}
 		return props;
 	}
+	
+    // Build list of Variant lists from parsed block state and match given properties
+    public List<VariantList> getMatchingVariants(Map<String, String> prop) {
+    	List<VariantList> vlist = new ArrayList<VariantList>();
+    	
+    	// If bstate has variant list map, walk it - only match first one
+    	if (this.variants != null) {
+    		for (Entry<BaseCondition, org.dynmap.blockscan.blockstate.VariantList> var : this.variants.map.entrySet()) {
+    			if(var.getKey().matches(prop)) {	// Matching property?
+    				// Only one will match for 'variants', so quit
+    				vlist.add(var.getValue());
+    				break;
+    			}
+    		}
+    	}
+    	// If bstate has multipart, walk it - accumulate all matches
+    	if (this.multipart != null) {
+    		for (Multipart mp : this.multipart) {
+    			if (mp.when == null) {	// Unconditional?
+    				vlist.add(mp.apply);	// Add it
+    			}
+    			else if (mp.when.matches(prop)) {	// Conditional matches?
+    				vlist.add(mp.apply);	// Add it
+    			}
+    		}
+    	}
+    	// If nested, process request
+    	if (this.nestedProp != null) {
+    		String pval = prop.get(this.nestedProp);
+    		if (pval != null) {
+    			BlockState bs = this.nestedValueMap(pval);
+    			if (bs != null) {
+    				vlist = bs.getMatchingVariants(prop);
+    			}
+    		}
+    	}
+    	return vlist;
+    }
+	private BlockState nestedValueMap(String pval) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
 }

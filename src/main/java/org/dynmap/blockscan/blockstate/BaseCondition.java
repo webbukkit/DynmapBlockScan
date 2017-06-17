@@ -10,6 +10,7 @@ public class BaseCondition implements Condition {
 	public final ImmutableMap<String, String> keyValuePairs;
 	// Only defined and populated with keys that have conditional values (x|y|z)
 	private final ImmutableMap<String, String[]> keyConditionalValuePairs;
+	private final String unmatchedValue;
 	
 	public BaseCondition(ImmutableMap<String, String> v) {
 		keyValuePairs = v;
@@ -30,10 +31,12 @@ public class BaseCondition implements Condition {
 		else {
 			keyConditionalValuePairs = null;
 		}
+		unmatchedValue = "";
 	}
 	
 	// Condition for variant key - comma separated list of attrib=value
 	public BaseCondition(String key) {
+		String uv = "";
 		ImmutableMap.Builder<String,String> bld = ImmutableMap.builder();
 		String[] tok = key.split(",");	// Split on commas
 		for (String t : tok) {
@@ -43,10 +46,12 @@ public class BaseCondition implements Condition {
 			}
 			else {
 				// 'normal' - nothing to do
+				uv = kv[0];
 			}
 		}
 		keyValuePairs = bld.build();
 		keyConditionalValuePairs = null;	// These never have conditionals
+		unmatchedValue = uv;
 	}
 	
 	@Override
@@ -56,14 +61,15 @@ public class BaseCondition implements Condition {
 	
 	@Override
 	public int hashCode() {
-		return keyValuePairs.hashCode();
+		return keyValuePairs.hashCode() ^ unmatchedValue.hashCode();
 	}
 	
 	@Override
 	public boolean equals(Object obj) {
 		if (this == obj) return true;
 		if (obj instanceof BaseCondition) {
-			return ((BaseCondition) obj).keyValuePairs.equals(keyValuePairs);
+			BaseCondition bc = (BaseCondition) obj;
+			return bc.keyValuePairs.equals(keyValuePairs) && bc.unmatchedValue.equals(this.unmatchedValue);
 		}
 		return false;
 	}

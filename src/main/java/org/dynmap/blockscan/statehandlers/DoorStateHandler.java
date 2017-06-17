@@ -27,7 +27,6 @@ public class DoorStateHandler implements IStateHandlerFactory {
         List<StateRec> state = bsc.getValidStates();
         // Doors have 4 rendering properties and 32 valid states
         if ((bsc.getProperties().size() != 4) || (state.size() != 32)) {
-        	DynmapBlockScanPlugin.logger.info("props=" + bsc.getProperties() + ", states=" + state + ", size=" + state.size());
             return null;
         }
         boolean facing = IStateHandlerFactory.findMatchingProperty(bsc, "facing", FACING);

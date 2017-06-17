@@ -1,6 +1,7 @@
 package org.dynmap.blockscan.statehandlers;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -61,7 +62,7 @@ public class StateContainer {
 		@Override
 		public String toString() {
 			StringBuilder sb = new StringBuilder();
-			sb.append("{ values=").append(keyValuePairs).append(",meta=").append(metadata).append("}");
+			sb.append("{ values=").append(keyValuePairs).append(",meta=").append(Arrays.toString(metadata)).append("}");
 			return sb.toString();
 		}
 	}

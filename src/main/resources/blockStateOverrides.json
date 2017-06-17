@@ -1,0 +1,37 @@
+{
+   "overrides": {
+      "minecraft": {
+         "stone": { "baseNameProperty": "variant" },
+         "prismarine": { "baseNameProperty": "variant" },
+         "leaves": { "baseNameProperty": "variant", "nameSuffix": "_leaves" },
+         "leaves2": { "baseNameProperty": "variant", "nameSuffix": "_leaves" },
+         "cobblestone_wall": { "baseNameProperty": "variant", "nameSuffix": "_wall" },
+         "double_plant": { "baseNameProperty": "variant" },
+         "double_wooden_slab": { "baseNameProperty": "variant", "nameSuffix": "_double_slab" },
+         "wooden_slab": { "baseNameProperty": "variant", "nameSuffix": "_slab" },
+         "wool": { "baseNameProperty": "color", "nameSuffix": "_wool" },
+         "carpet": { "baseNameProperty": "color", "nameSuffix": "_carpet" },
+         "stained_hardened_clay": { "baseNameProperty": "color", "nameSuffix": "_stained_hardened_clay" },
+         "stained_glass_pane": { "baseNameProperty": "color", "nameSuffix": "_stained_glass_pane" },
+         "stained_glass": { "baseNameProperty": "color", "nameSuffix": "_stained_glass" },
+         "sandstone": { "baseNameProperty": "type" },
+         "red_sandstone": { "baseNameProperty": "type" },
+         "tallgrass": { "baseNameProperty": "type" },
+         "yellow_flower": { "baseNameProperty": "type" },
+         "red_flower": { "baseNameProperty": "type" },
+         "stone_slab": { "baseNameProperty": "variant", "nameSuffix": "_slab" },
+         "stone_slab2": { "baseNameProperty": "variant", "nameSuffix": "_slab" },
+         "monster_egg": { "baseNameProperty": "variant", "nameSuffix": "_monster_egg" },
+         "stonebrick": { "baseNameProperty": "variant" },
+         "log": { "baseNameProperty": "variant", "nameSuffix": "_log" },
+         "log2": { "baseNameProperty": "variant", "nameSuffix": "_log" },
+         "planks": { "baseNameProperty": "variant", "nameSuffix": "_planks" },
+         "sapling": { "baseNameProperty": "type", "nameSuffix": "_sapling" },
+         "sand": { "baseNameProperty": "variant" },
+         "deadbush": { "blockStateName": "dead_bush" },
+         "double_stone_slab": { "baseNameProperty": "variant", "nameSuffix": "_double_slab" },
+         "double_stone_slab2": { "baseNameProperty": "variant", "nameSuffix": "_double_slab" },
+         "dirt": { "baseNameProperty": "variant" }
+      }
+   }
+}
