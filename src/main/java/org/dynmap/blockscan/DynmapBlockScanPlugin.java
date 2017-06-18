@@ -47,6 +47,7 @@ import net.minecraft.block.properties.IProperty;
 import net.minecraft.block.state.BlockStateContainer;
 import net.minecraft.block.state.IBlockState;
 import net.minecraft.server.MinecraftServer;
+import net.minecraft.util.EnumBlockRenderType;
 import net.minecraft.util.IStringSerializable;
 import net.minecraft.util.ResourceLocation;
 import net.minecraftforge.fml.common.Loader;
@@ -115,6 +116,35 @@ public class DynmapBlockScanPlugin
             ResourceLocation rl = b.getRegistryName();
             logger.info(String.format("Block %s: %d", rl, Block.getIdFromBlock(b)));
             BlockStateContainer bsc = b.getBlockState();
+            // See if any of the block states use MODEL
+            boolean uses_model = false;
+            boolean uses_nonmodel = false;
+            for (IBlockState bs : bsc.getValidStates()) {
+            	switch (bs.getRenderType()) {
+            		case MODEL:
+            			uses_model = true;
+            			break;
+            		case INVISIBLE:
+            			uses_nonmodel = true;
+            			logger.info("Invisible block - nothing to render");
+            			break;
+            		case ENTITYBLOCK_ANIMATED:
+            			uses_nonmodel = true;
+            			logger.info("Animated block - needs to be handled specially");
+            			break;
+            		case LIQUID:
+            			uses_nonmodel = true;
+            			logger.info("Liquid block - special handling");
+            			break;
+            	}
+            }
+            // Not model block - nothing else to do yet
+            if (!uses_model) {
+            	continue;
+            }
+            else if (uses_nonmodel) {
+            	logger.warning("Block mixes model and nonmodel state handling!");
+            }
             // Generate property value map
             Map<String, List<String>> propMap = buildPropoertMap(bsc);
             // Try to find blockstate file

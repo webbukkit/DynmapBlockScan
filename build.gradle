@@ -38,7 +38,7 @@ ext.buildNumber = System.getenv().BUILD_NUMBER ?: "Dev"
 minecraft {
     version = config.minecraft_version + "-" + config.forge_version
 	runDir = "run"
-	mappings = "snapshot_nodoc_20161220"
+	mappings = project.config.mapping_version
 	replaceIn "Version.java"
     	replace "@VERSION@", config.Dynmap_version + config.Dynmap_extversion + '-' + project.ext.buildNumber
     	replace "@BUILD_NUMBER@", project.ext.buildNumber
@@ -54,8 +54,7 @@ configurations {
 }
 
 dependencies {
-//    dynmap group: 'us.dynmap', name: 'DynmapCore', version: "${config.Dynmap_version}${config.DynmapCore_devversion}", ext: 'jar'
-//    dynmap group: 'us.dynmap', name:'DynmapCoreAPI', version: "${config.Dynmap_version}${config.DynmapCore_devversion}", ext: 'jar'
+    dynmap group: 'us.dynmap', name: 'DynmapCore', version: "${config.Dynmap_version}${config.DynmapCore_devversion}", ext: 'jar'
 }
 
 processResources
