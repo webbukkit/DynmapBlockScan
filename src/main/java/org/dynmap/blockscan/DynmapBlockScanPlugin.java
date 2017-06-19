@@ -7,6 +7,7 @@ import java.io.InputStreamReader;
 import java.io.Reader;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -15,9 +16,7 @@ import java.util.Set;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.dynmap.blockscan.BlockStateOverrides.BlockStateOverride;
-import org.dynmap.blockscan.blockstate.BaseCondition;
 import org.dynmap.blockscan.blockstate.BlockState;
-import org.dynmap.blockscan.blockstate.Multipart;
 import org.dynmap.blockscan.blockstate.Variant;
 import org.dynmap.blockscan.blockstate.VariantList;
 import org.dynmap.blockscan.model.BlockModel;
@@ -49,7 +48,6 @@ import net.minecraft.block.properties.IProperty;
 import net.minecraft.block.state.BlockStateContainer;
 import net.minecraft.block.state.IBlockState;
 import net.minecraft.server.MinecraftServer;
-import net.minecraft.util.EnumBlockRenderType;
 import net.minecraft.util.IStringSerializable;
 import net.minecraft.util.ResourceLocation;
 import net.minecraftforge.fml.common.Loader;
@@ -179,22 +177,11 @@ public class DynmapBlockScanPlugin
                 logger.info(rl + ":  NO MATCHING HANDLER");
             }
             blockRecords.put(rl.toString(), br);
-            
-            //Collection<IProperty<?>> props = bsc.getProperties();
-            //for (IBlockState valid : bsc.getValidStates()) {
-            //    StringBuilder sb = new StringBuilder();
-            //    for(IProperty<?> p : props) {
-            //        if (sb.length() > 0)
-            //            sb.append(",");
-            //        sb.append(p.getName()).append("=").append(valid.getValue(p));
-            //    }
-            //    logger.info(String.format("  State %s: meta=%d, rendertype=%s", sb.toString(), b.getMetaFromState(valid), valid.getRenderType()));
-            //}
         }
         
         // Now process models from block records
         Map<String, BlockModel> models = new HashMap<String, BlockModel>();
-        
+        logger.info("Loading models....");
         for (String blkname : blockRecords.keySet()) {
         	BlockRecord br = blockRecords.get(blkname);
         	if (br.sc != null) {
@@ -202,17 +189,64 @@ public class DynmapBlockScanPlugin
         			for (VariantList vl : var.getValue()) {
         				for (Variant va : vl.variantList) {
         					if (va.model != null) {
-        						if (va.model.indexOf(':') < 0) {
-        							va.model = "minecraft:" + va.model;
-        						}
         						String[] tok = va.model.split(":");
-        						BlockModel mod = models.get(va.model);	// See if we have it
+        						if (tok.length == 1) {
+        							tok = new String[] { "minecraft", "block/" + tok[0] };
+        						}
+        						else {
+        							tok[1] = "block/" + tok[1];
+        						}
+        						String modid = tok[0] + ":" + tok[1];
+        						BlockModel mod = models.get(modid);	// See if we have it
         						if (mod == null) {
-        							mod = loadBlockModelFile(tok[0], "block/" + tok[1]);
+        							mod = loadBlockModelFile(tok[0], tok[1]);
         							if (mod != null) {
-        								logger.info(String.format("Loaded model %s: %s", va.model, mod));
-        								models.put(va.model, mod);
+        								models.put(modid, mod);
         							}
+        						}
+        						va.modelID = modid;	// save normalized ID
+        					}
+        				}
+        			}
+        		}
+        	}
+        }
+        logger.info("Variant models loaded");
+        // Now, resolve all parent references - load additional models
+        LinkedList<BlockModel> modelToResolve = new LinkedList<BlockModel>(models.values());
+        while (modelToResolve.isEmpty() == false) {
+        	BlockModel mod = modelToResolve.pop();
+        	if (mod.parent != null) {	// If parent reference
+        		String modid = mod.parent;
+        		if (modid.indexOf(':') < 0) {
+        			modid = "minecraft:" + modid;
+        		}
+        		mod.parentModel = models.get(modid);	// Look up: see if already loaded
+        		if (mod.parentModel == null) {
+					String[] tok = modid.split(":");
+					mod.parentModel = loadBlockModelFile(tok[0], tok[1]);
+					if (mod.parentModel != null) {
+						models.put(modid, mod.parentModel);
+						modelToResolve.push(mod.parentModel);
+						logger.info("Loaded parent " + modid);
+					}
+        		}
+        	}
+        }
+        logger.info("Parent models loaded and resolved");
+        // Now resolve the elements for all the variants
+        for (String blkname : blockRecords.keySet()) {
+        	BlockRecord br = blockRecords.get(blkname);
+        	if (br.sc != null) {
+        		for (Entry<StateRec, List<VariantList>> var : br.varList.entrySet()) {
+        			for (VariantList vl : var.getValue()) {
+        				for (Variant va : vl.variantList) {
+        					if(va.generateElements(models) == false) {
+        						logger.warning(va.toString() + ": failed to generate elements");
+        					}
+        					else {
+        						if ((va.elements.size() == 1) && (va.elements.get(0).isSimpleBlock())) {
+        							logger.info(String.format("%s: %s is simple block",  blkname, var.getKey()));
         						}
         					}
         				}
@@ -220,6 +254,7 @@ public class DynmapBlockScanPlugin
         		}
         	}
         }
+        logger.info("Elements generated");
     }
     
     public static InputStream openResource(String modid, String rname) {

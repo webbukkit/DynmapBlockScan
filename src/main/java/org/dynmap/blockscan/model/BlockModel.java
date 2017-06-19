@@ -17,7 +17,7 @@ import net.minecraft.client.renderer.block.model.ModelBlock;
 import net.minecraft.util.ResourceLocation;
 
 // Top level container class for JSON parsed Block Model data
-public class BlockModel {
+public class BlockModel implements TextureReferences {
 	// Parser for BlockState
 	private static Gson GSON;
 	// Elements of model
@@ -28,6 +28,8 @@ public class BlockModel {
     public final Map<String, String> textures = Collections.emptyMap();
     // Parent model ID
     public final String parent = null;
+    // Resolved reference to loaded parent model
+    public BlockModel parentModel = null;
     
     @Override
 	public String toString() {
@@ -57,5 +59,40 @@ public class BlockModel {
 			GSON = g;
 		}
 		return g;
+	}
+	
+	/**
+	 * Find texture by ID
+	 * 
+	 * @param txtid - texture reference value (possibly with # leading)
+	 * @return resolved and normalized texture name, or null if not found
+	 */
+	@Override
+	public String findTextureByID(String txtid) {
+		String basetxtid = txtid;
+		while(txtid.startsWith("#")) {
+			BlockModel mod = this;
+			boolean match = false;
+			txtid = txtid.substring(1);
+			while (!match) {
+				// If txtid key in textures definition
+				if (mod.textures.containsKey(txtid)) {
+					match = true;
+					txtid = mod.textures.get(txtid);	// Match : get value
+				}
+				else {	// Elxe, move to parent
+					mod = mod.parentModel;
+					// Not found, we're done
+					if (mod == null) {
+						return null;
+					}
+				}
+			}
+		}
+		// We have resolved value: make sure its normalized texture reference
+		if (txtid.indexOf(':') < 0) {
+			txtid = "minecraft:" + txtid;
+		}
+		return txtid;
 	}
 }
