@@ -18,7 +18,9 @@ import org.dynmap.blockscan.BlockStateOverrides.BlockStateOverride;
 import org.dynmap.blockscan.blockstate.BaseCondition;
 import org.dynmap.blockscan.blockstate.BlockState;
 import org.dynmap.blockscan.blockstate.Multipart;
+import org.dynmap.blockscan.blockstate.Variant;
 import org.dynmap.blockscan.blockstate.VariantList;
+import org.dynmap.blockscan.model.BlockModel;
 import org.dynmap.blockscan.statehandlers.BedMetadataStateHandler;
 import org.dynmap.blockscan.statehandlers.IStateHandler;
 import org.dynmap.blockscan.statehandlers.IStateHandlerFactory;
@@ -189,6 +191,35 @@ public class DynmapBlockScanPlugin
             //    logger.info(String.format("  State %s: meta=%d, rendertype=%s", sb.toString(), b.getMetaFromState(valid), valid.getRenderType()));
             //}
         }
+        
+        // Now process models from block records
+        Map<String, BlockModel> models = new HashMap<String, BlockModel>();
+        
+        for (String blkname : blockRecords.keySet()) {
+        	BlockRecord br = blockRecords.get(blkname);
+        	if (br.sc != null) {
+        		for (Entry<StateRec, List<VariantList>> var : br.varList.entrySet()) {
+        			for (VariantList vl : var.getValue()) {
+        				for (Variant va : vl.variantList) {
+        					if (va.model != null) {
+        						if (va.model.indexOf(':') < 0) {
+        							va.model = "minecraft:" + va.model;
+        						}
+        						String[] tok = va.model.split(":");
+        						BlockModel mod = models.get(va.model);	// See if we have it
+        						if (mod == null) {
+        							mod = loadBlockModelFile(tok[0], "block/" + tok[1]);
+        							if (mod != null) {
+        								logger.info(String.format("Loaded model %s: %s", va.model, mod));
+        								models.put(va.model, mod);
+        							}
+        						}
+        					}
+        				}
+        			}
+        		}
+        	}
+        }
     }
     
     public static InputStream openResource(String modid, String rname) {
@@ -296,6 +327,28 @@ public class DynmapBlockScanPlugin
         }
         else {
     		logger.info(String.format("%s:%s : Failed to open blockstate", modid, path));
+        }
+        return bs;
+    }
+    
+    private static BlockModel loadBlockModelFile(String modid, String respath) {
+        String path = "assets/" + modid + "/models/" + respath + ".json";
+    	BlockModel bs = null;
+        InputStream is = openResource(modid, path);
+        if (is != null) {	// Found it?
+        	Reader rdr = new InputStreamReader(is, Charsets.UTF_8);
+        	Gson parse = BlockModel.buildParser();	// Get parser
+        	bs = parse.fromJson(rdr, BlockModel.class);
+        	try {
+				is.close();
+			} catch (IOException e) {
+			}
+        	if (bs == null) {
+        		logger.info(String.format("%s:%s : Failed to load model!", modid, path));
+        	}
+        }
+        else {
+    		logger.info(String.format("%s:%s : Failed to open model", modid, path));
         }
         return bs;
     }
