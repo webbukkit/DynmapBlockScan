@@ -6,6 +6,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -165,6 +166,9 @@ public class DynmapBlockScanPlugin
         			br.varList.put(sr, vlist);
         		}
         	}
+        	else {
+        	    br.varList = Collections.emptyMap();
+        	}
             // Check for matching handler
             br.handler = null;
             for (IStateHandlerFactory f : state_handler) {
@@ -258,11 +262,15 @@ public class DynmapBlockScanPlugin
     }
     
     public static InputStream openResource(String modid, String rname) {
+        String rname_lc = rname.toLowerCase();
         if (modid != null) {
             ModContainer mc = Loader.instance().getIndexedModList().get(modid);
-            Object mod = mc.getMod();
+            Object mod = (mc != null)?mc.getMod():null;
             if (mod != null) {
                 InputStream is = mod.getClass().getClassLoader().getResourceAsStream(rname);
+                if (is == null) {
+                    is = mod.getClass().getClassLoader().getResourceAsStream(rname_lc);
+                }
                 if (is != null) {
                     return is;
                 }
@@ -273,6 +281,9 @@ public class DynmapBlockScanPlugin
             Object mod = mc.getMod();
             if (mod == null) continue;
             InputStream is = mod.getClass().getClassLoader().getResourceAsStream(rname);
+            if (is == null) {
+                is = mod.getClass().getClassLoader().getResourceAsStream(rname_lc);
+            }
             if (is != null) {
                 return is;
             }
@@ -351,9 +362,13 @@ public class DynmapBlockScanPlugin
         if (is != null) {	// Found it?
         	Reader rdr = new InputStreamReader(is, Charsets.UTF_8);
         	Gson parse = BlockState.buildParser();	// Get parser
-        	bs = parse.fromJson(rdr, BlockState.class);
         	try {
-				is.close();
+        	    bs = parse.fromJson(rdr, BlockState.class);
+        	} catch (Exception x) {
+        	    logger.severe("Error processing " + path, x);
+        	}
+        	try {
+        	    is.close();
 			} catch (IOException e) {
 			}
         	if (bs == null) {

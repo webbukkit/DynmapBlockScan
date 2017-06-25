@@ -1,5 +1,6 @@
 package org.dynmap.blockscan.blockstate;
 
+import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -7,14 +8,23 @@ import java.util.Map;
 import java.util.Set;
 import java.util.Map.Entry;
 
+import com.google.common.collect.Lists;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonDeserializationContext;
+import com.google.gson.JsonDeserializer;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParseException;
 
 // Top level container class for JSON parsed BlockState data
 public class BlockState {
 	// Parser for BlockState
 	private static Gson GSON;
 
+	// Forge marker version (0=vanilla)
+	public int forge_marker = 0;
 	// "variants" map: key is state string, value is either Variant or list of Variant object (need special parser)
 	public VariantListMap variants;
 	// "multipart" list: each record is a MultiPart
@@ -39,6 +49,7 @@ public class BlockState {
 		Gson g = GSON;
 		if (g == null) {
 			GsonBuilder gb = new GsonBuilder();	// Start with builder
+			gb.registerTypeAdapter(BlockState.class, new BlockState.Deserializer());
 			gb.registerTypeAdapter(VariantList.class, new VariantList.Deserializer()); // Add VariantList handler
 			gb.registerTypeAdapter(VariantListMap.class, new VariantListMap.Deserializer()); // Add VariantListMap handler
 			gb.registerTypeAdapter(Condition.class, new Condition.Deserializer()); // Add Condition handler1
@@ -106,5 +117,28 @@ public class BlockState {
 		// TODO Auto-generated method stub
 		return null;
 	}
+	
+   // Custom deserializer - handles forge vs vanilla
+    public static class Deserializer implements JsonDeserializer<BlockState> {
+        @Override
+        public BlockState deserialize(JsonElement element, Type type, JsonDeserializationContext context) throws JsonParseException {
+            BlockState bs = new BlockState();
+            // See if we have forge marker
+            JsonObject obj = element.getAsJsonObject();
+            if (obj.has("forge_marker")) {
+                bs.forge_marker = obj.get("forge_marker").getAsInt();
+            }
+            else if (obj.has("multipart")) {
+                bs.multipart = new ArrayList<Multipart>();
+                for (JsonElement je : obj.getAsJsonArray("multipart")) {
+                    bs.multipart.add(context.deserialize(je, Multipart.class));
+                }
+            }
+            else if (obj.has("variants")) {
+                bs.variants = context.deserialize(obj.get("variants"), VariantListMap.class);
+            }
+            return bs;
+        }
+    }
 
 }
