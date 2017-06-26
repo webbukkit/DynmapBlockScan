@@ -6,6 +6,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -16,8 +17,6 @@ import java.util.Set;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.dynmap.DynmapCommonAPI;
-import org.dynmap.DynmapCommonAPIListener;
 import org.dynmap.blockscan.BlockStateOverrides.BlockStateOverride;
 import org.dynmap.blockscan.blockstate.BlockState;
 import org.dynmap.blockscan.blockstate.Variant;
@@ -149,15 +148,15 @@ public class DynmapBlockScanPlugin
             			break;
             		case INVISIBLE:
             			uses_nonmodel = true;
-            			logger.info(String.format("%s<%s>: Invisible block - nothing to render", rl, bs.getProperties()));
+            			logger.info(String.format("%s: Invisible block - nothing to render", rl));
             			break;
             		case ENTITYBLOCK_ANIMATED:
             			uses_nonmodel = true;
-            			logger.info(String.format("%s<%s>: Animated block - needs to be handled specially", rl, bs.getProperties()));
+            			logger.info(String.format("%s: Animated block - needs to be handled specially", rl));
             			break;
             		case LIQUID:
             			uses_nonmodel = true;
-            			logger.info(String.format("%s<%s>: Liquid block - special handling", rl, bs.getProperties()));
+            			logger.info(String.format("%s: Liquid block - special handling", rl));
             			break;
             	}
             }
@@ -342,7 +341,7 @@ public class DynmapBlockScanPlugin
     	if (btr == null) {
     		return;
     	}
-    	logger.info("Created block record for " + blkname);
+    	logger.info("Created block record for " + blkname + Arrays.toString(meta));
     	// Set matching metadata
     	for (int metaval : meta) {
     		btr.setMetaValue(metaval);
