@@ -6,6 +6,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.dynmap.blockscan.blockstate.BlockState;
+
 import com.google.common.annotations.VisibleForTesting;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -55,6 +57,7 @@ public class BlockModel implements TextureReferences {
 		Gson g = GSON;
 		if (g == null) {
 			GsonBuilder gb = new GsonBuilder();	// Start with builder
+			gb.registerTypeAdapter(BlockElement.class, new BlockElement.Deserializer());
 			g = gb.create();
 			GSON = g;
 		}

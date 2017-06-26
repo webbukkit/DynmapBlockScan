@@ -57,6 +57,7 @@ import net.minecraft.block.properties.IProperty;
 import net.minecraft.block.state.BlockStateContainer;
 import net.minecraft.block.state.IBlockState;
 import net.minecraft.server.MinecraftServer;
+import net.minecraft.util.EnumFacing;
 import net.minecraft.util.IStringSerializable;
 import net.minecraft.util.ResourceLocation;
 import net.minecraftforge.fml.common.Loader;
@@ -67,7 +68,7 @@ public class DynmapBlockScanPlugin
     public static OurLog logger = new OurLog();
     public static DynmapBlockScanPlugin plugin;
     
-    private Map<String, BlockSide> faceToSide = new HashMap<String, BlockSide>();
+    private Map<EnumFacing, BlockSide> faceToSide = new HashMap<EnumFacing, BlockSide>();
     
 
     public static class BlockRecord {
@@ -94,12 +95,12 @@ public class DynmapBlockScanPlugin
     {
         plugin = this;
         
-        faceToSide.put("down", BlockSide.FACE_0);
-        faceToSide.put("up", BlockSide.FACE_1);
-        faceToSide.put("north", BlockSide.FACE_2);
-        faceToSide.put("south", BlockSide.FACE_3);
-        faceToSide.put("west", BlockSide.FACE_4);
-        faceToSide.put("east", BlockSide.FACE_5);
+        faceToSide.put(EnumFacing.DOWN, BlockSide.FACE_0);
+        faceToSide.put(EnumFacing.UP, BlockSide.FACE_1);
+        faceToSide.put(EnumFacing.NORTH, BlockSide.FACE_2);
+        faceToSide.put(EnumFacing.SOUTH, BlockSide.FACE_3);
+        faceToSide.put(EnumFacing.WEST, BlockSide.FACE_4);
+        faceToSide.put(EnumFacing.EAST, BlockSide.FACE_5);
     }
 
 
@@ -347,7 +348,7 @@ public class DynmapBlockScanPlugin
     		btr.setMetaValue(metaval);
     	}
     	// Loop over the images for the element
-    	for (Entry<String, BlockFace> face : element.faces.entrySet()) {
+    	for (Entry<EnumFacing, BlockFace> face : element.faces.entrySet()) {
     		BlockFace f = face.getValue();
     		BlockSide bs = faceToSide.get(face.getKey());
     		if ((bs != null) && (f.texture != null)) {

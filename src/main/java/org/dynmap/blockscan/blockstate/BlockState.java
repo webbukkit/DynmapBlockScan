@@ -9,21 +9,13 @@ import java.util.Map;
 import java.util.Set;
 import java.util.Map.Entry;
 
-import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-import com.google.gson.JsonArray;
 import com.google.gson.JsonDeserializationContext;
 import com.google.gson.JsonDeserializer;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParseException;
-
-import net.minecraft.inventory.ContainerShulkerBox;
-import net.minecraft.util.JsonUtils;
-import net.minecraftforge.client.model.ForgeBlockStateV1;
-import net.minecraftforge.client.model.ForgeBlockStateV1.Variant;
 
 // Top level container class for JSON parsed BlockState data
 public class BlockState {
@@ -61,6 +53,7 @@ public class BlockState {
 		if (g == null) {
 			GsonBuilder gb = new GsonBuilder();	// Start with builder
 			gb.registerTypeAdapter(BlockState.class, new BlockState.Deserializer());
+			gb.registerTypeAdapter(Variant.class, new Variant.Deserializer()); // Add Variant handler
 			gb.registerTypeAdapter(VariantList.class, new VariantList.Deserializer()); // Add VariantList handler
             gb.registerTypeAdapter(ForgeVariantV1List.class, new ForgeVariantV1List.Deserializer()); // Add ForgeVariantV1List handler
             gb.registerTypeAdapter(ForgeVariantV1.class, new ForgeVariantV1.Deserializer()); // Add ForgeVariantV1 handler
