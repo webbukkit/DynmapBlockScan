@@ -43,7 +43,7 @@ public class Variant {
 		// Now, we're going to build copies of the elements with resolved models
 		elements = new ArrayList<BlockElement>();
 		for (BlockElement elem : elemmod.elements) {
-			elements.add(new BlockElement(elem, basemod));
+			elements.add(new BlockElement(elem, basemod, rotation, uvlock));
 		}
 		return true;
 	}

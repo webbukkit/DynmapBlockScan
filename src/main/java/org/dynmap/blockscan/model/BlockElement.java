@@ -8,6 +8,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 
 import org.dynmap.blockscan.DynmapBlockScanPlugin;
+import org.dynmap.blockscan.blockstate.ModelRotation;
 
 import com.google.gson.JsonDeserializationContext;
 import com.google.gson.JsonDeserializer;
@@ -33,7 +34,7 @@ public class BlockElement {
      * @param src - source elements
      * @param txtrefs - source of texture references
      */
-    public BlockElement(BlockElement src, TextureReferences txtrefs) {
+    public BlockElement(BlockElement src, TextureReferences txtrefs, ModelRotation mrot, boolean uvlock) {
     	from = Arrays.copyOf(src.from, src.from.length);
     	to = Arrays.copyOf(src.to, src.to.length);
     	if (src.rotation != null) { 
@@ -49,7 +50,7 @@ public class BlockElement {
     			DynmapBlockScanPlugin.logger.info("Unresolved texture ref: " + f.texture);
     		}
     		else {
-    			faces.put(face.getKey(), new BlockFace(f, v));
+    			faces.put(mrot.rotateFace(face.getKey()), new BlockFace(f, v));
     		}
     	}
     }

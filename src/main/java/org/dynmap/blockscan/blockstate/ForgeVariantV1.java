@@ -34,33 +34,6 @@ public class ForgeVariantV1 {
     public String simple_submodel;
     public Map<String, String> custom;
 
-	// Normalized model ID
-	public String modelID;
-	// Generated and resolved element list
-	public List<BlockElement> elements;
-	
-	// Generate and resolve element list for variant
-	public boolean generateElements(Map<String, BlockModel> models) {
-		BlockModel basemod = models.get(modelID);	// Loop up our model
-		if (basemod == null) {
-			return false;
-		}
-		// Find topmost elements
-		BlockModel elemmod = basemod;
-		while (elemmod.elements.isEmpty()) {
-			elemmod = elemmod.parentModel;	// Get parent model
-			if (elemmod == null) {	// Not found, we've got no elements
-				return false;
-			}
-		}
-		// Now, we're going to build copies of the elements with resolved models
-		elements = new ArrayList<BlockElement>();
-		for (BlockElement elem : elemmod.elements) {
-			elements.add(new BlockElement(elem, basemod));
-		}
-		return true;
-	}
-	
 	@Override
 	public int hashCode() {
 		return model.hashCode() ^ x ^ (y << 8) ^ (weight << 16) ^ (uvlock?12345:0);
