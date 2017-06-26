@@ -107,7 +107,7 @@ public class GateMetadataStateHandler implements IStateHandlerFactory {
         }
         @Override
         public String getName() {
-            return "SnowyMetadataState";
+            return "GateMetadataState";
         }
         @Override
         public int getBlockStateIndex(int blockid, int blockmeta) {

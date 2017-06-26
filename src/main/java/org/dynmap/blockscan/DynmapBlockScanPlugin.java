@@ -16,10 +16,14 @@ import java.util.Set;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.dynmap.DynmapCommonAPI;
+import org.dynmap.DynmapCommonAPIListener;
 import org.dynmap.blockscan.BlockStateOverrides.BlockStateOverride;
 import org.dynmap.blockscan.blockstate.BlockState;
 import org.dynmap.blockscan.blockstate.Variant;
 import org.dynmap.blockscan.blockstate.VariantList;
+import org.dynmap.blockscan.model.BlockElement;
+import org.dynmap.blockscan.model.BlockFace;
 import org.dynmap.blockscan.model.BlockModel;
 import org.dynmap.blockscan.statehandlers.BedMetadataStateHandler;
 import org.dynmap.blockscan.statehandlers.IStateHandler;
@@ -30,6 +34,11 @@ import org.dynmap.blockscan.statehandlers.SnowyMetadataStateHandler;
 import org.dynmap.blockscan.statehandlers.StairMetadataStateHandler;
 import org.dynmap.blockscan.statehandlers.StateContainer;
 import org.dynmap.blockscan.statehandlers.StateContainer.StateRec;
+import org.dynmap.modsupport.BlockSide;
+import org.dynmap.modsupport.BlockTextureRecord;
+import org.dynmap.modsupport.GridTextureFile;
+import org.dynmap.modsupport.ModSupportAPI;
+import org.dynmap.modsupport.ModTextureDefinition;
 
 import com.google.common.base.Charsets;
 import com.google.common.collect.ImmutableMap;
@@ -59,6 +68,9 @@ public class DynmapBlockScanPlugin
     public static OurLog logger = new OurLog();
     public static DynmapBlockScanPlugin plugin;
     
+    private Map<String, BlockSide> faceToSide = new HashMap<String, BlockSide>();
+    
+
     public static class BlockRecord {
     	public StateContainer sc;
     	public Map<StateRec, List<VariantList>> varList;	// Model references for block
@@ -82,6 +94,13 @@ public class DynmapBlockScanPlugin
     public DynmapBlockScanPlugin(MinecraftServer srv)
     {
         plugin = this;
+        
+        faceToSide.put("down", BlockSide.FACE_0);
+        faceToSide.put("up", BlockSide.FACE_1);
+        faceToSide.put("north", BlockSide.FACE_2);
+        faceToSide.put("south", BlockSide.FACE_3);
+        faceToSide.put("west", BlockSide.FACE_4);
+        faceToSide.put("east", BlockSide.FACE_5);
     }
 
 
@@ -92,7 +111,10 @@ public class DynmapBlockScanPlugin
         logger.info("onDisable()");
     }
     public void serverStarted() {
-        logger.info("serverStarted()");
+    	logger.info("serverStarted()");
+    }
+    public void serverStarting() {
+        logger.info("serverStarting()");
         
         // Load override resources
         InputStream override_str = openResource("dynmapblockscan", "blockStateOverrides.json");
@@ -115,7 +137,7 @@ public class DynmapBlockScanPlugin
         // Scan blocks and block states
         for (Block b : Block.REGISTRY) {
             ResourceLocation rl = b.getRegistryName();
-            logger.info(String.format("Block %s: %d", rl, Block.getIdFromBlock(b)));
+            //logger.info(String.format("Block %s: %d", rl, Block.getIdFromBlock(b)));
             BlockStateContainer bsc = b.getBlockState();
             // See if any of the block states use MODEL
             boolean uses_model = false;
@@ -127,15 +149,15 @@ public class DynmapBlockScanPlugin
             			break;
             		case INVISIBLE:
             			uses_nonmodel = true;
-            			logger.info("Invisible block - nothing to render");
+            			logger.info(String.format("%s<%s>: Invisible block - nothing to render", rl, bs.getProperties()));
             			break;
             		case ENTITYBLOCK_ANIMATED:
             			uses_nonmodel = true;
-            			logger.info("Animated block - needs to be handled specially");
+            			logger.info(String.format("%s<%s>: Animated block - needs to be handled specially", rl, bs.getProperties()));
             			break;
             		case LIQUID:
             			uses_nonmodel = true;
-            			logger.info("Liquid block - special handling");
+            			logger.info(String.format("%s<%s>: Liquid block - special handling", rl, bs.getProperties()));
             			break;
             	}
             }
@@ -144,7 +166,7 @@ public class DynmapBlockScanPlugin
             	continue;
             }
             else if (uses_nonmodel) {
-            	logger.warning("Block mixes model and nonmodel state handling!");
+            	logger.warning(String.format("%s: Block mixes model and nonmodel state handling!", rl));
             }
             // Generate property value map
             Map<String, List<String>> propMap = buildPropoertMap(bsc);
@@ -232,7 +254,7 @@ public class DynmapBlockScanPlugin
 					if (mod.parentModel != null) {
 						models.put(modid, mod.parentModel);
 						modelToResolve.push(mod.parentModel);
-						logger.info("Loaded parent " + modid);
+						//logger.info("Loaded parent " + modid);
 					}
         		}
         	}
@@ -250,7 +272,10 @@ public class DynmapBlockScanPlugin
         					}
         					else {
         						if ((va.elements.size() == 1) && (va.elements.get(0).isSimpleBlock())) {
-        							logger.info(String.format("%s: %s is simple block",  blkname, var.getKey()));
+        							if (br.handler != null) {
+        								//logger.info(String.format("%s: %s is simple block with %s map",  blkname, var.getKey(), br.handler.getName()));
+        								registerSimpleDynmapCubes(blkname, var.getKey().metadata, va.elements.get(0));
+        							}
         						}
         					}
         				}
@@ -259,6 +284,88 @@ public class DynmapBlockScanPlugin
         	}
         }
         logger.info("Elements generated");
+        
+        publishDynmapModData();
+    }
+    
+    private ModSupportAPI dynmap_api;
+    
+    private static class ModDynmapRec {
+    	ModTextureDefinition txtDef;
+    	Map<String, GridTextureFile> textureIDsByPath = new HashMap<String, GridTextureFile>();
+    	int nextTxtID = 1;
+    	
+    	public GridTextureFile registerTexture(String txtpath) {
+    		GridTextureFile txtf = textureIDsByPath.get(txtpath);
+    		if (txtf == null) {
+    			String txtid = String.format("txt%04d", nextTxtID);
+    			nextTxtID++;	// Assign next ID
+    			// Split path to build full path
+    			String[] ptok = txtpath.split(":");
+    			String fname = "assets/" + ptok[0] + "/textures/" + ptok[1] + ".png";
+    			txtf = txtDef.registerTextureFile(txtid, fname);
+    			if (txtf != null) {
+    				textureIDsByPath.put(txtpath, txtf);
+    			}
+    		}
+    		return txtf;
+    	}
+    }
+    private Map<String, ModDynmapRec> modTextureDef = new HashMap<String, ModDynmapRec>();
+    
+        
+    public void registerSimpleDynmapCubes(String blkname, int[] meta, BlockElement element) {
+    	String[] tok = blkname.split(":");
+    	String modid = tok[0];
+    	String blknm = tok[1];
+    	if (tok[0].equals("minecraft")) {	// Skip vanilla
+    		return;
+    	}
+    	if (dynmap_api == null) {
+    		dynmap_api = ModSupportAPI.getAPI();
+        	if (dynmap_api == null) {
+        		return;
+        	}
+    	}
+    	ModDynmapRec td = modTextureDef.get(modid);
+    	if (td == null) {
+    		td = new ModDynmapRec();
+    		td.txtDef = dynmap_api.getModTextureDefinition(modid, null);
+    		if (td.txtDef == null) {
+    			return;
+    		}
+    		modTextureDef.put(modid, td);
+    		logger.info("Create dynmap mod record for " + modid);
+    	}
+    	// Create block texture record
+    	BlockTextureRecord btr = td.txtDef.addBlockTextureRecord(blknm);
+    	if (btr == null) {
+    		return;
+    	}
+    	logger.info("Created block record for " + blkname);
+    	// Set matching metadata
+    	for (int metaval : meta) {
+    		btr.setMetaValue(metaval);
+    	}
+    	// Loop over the images for the element
+    	for (Entry<String, BlockFace> face : element.faces.entrySet()) {
+    		BlockFace f = face.getValue();
+    		BlockSide bs = faceToSide.get(face.getKey());
+    		if ((bs != null) && (f.texture != null)) {
+    			GridTextureFile gtf = td.registerTexture(f.texture);
+    			btr.setSideTexture(gtf, bs);
+    		}
+    	}
+    }
+    
+    public void publishDynmapModData() {
+    	for (ModDynmapRec mod : modTextureDef.values()) {
+    		if (mod.txtDef != null) {
+    			mod.txtDef.publishDefinition();
+    			logger.info("Published " + mod.txtDef.getModID() + " to Dynmap");
+    		}
+    	}
+    
     }
     
     public static InputStream openResource(String modid, String rname) {

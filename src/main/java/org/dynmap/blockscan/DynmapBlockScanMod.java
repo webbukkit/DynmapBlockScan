@@ -67,13 +67,14 @@ public class DynmapBlockScanMod
     @EventHandler
     public void serverStarting(FMLServerStartingEvent event) {
         server = event.getServer();
+        if(plugin == null)
+            plugin = proxy.startServer(server);
+        plugin.serverStarting();
     }
     
     @EventHandler
     public void serverStarted(FMLServerStartedEvent event)
     {
-        if(plugin == null)
-            plugin = proxy.startServer(server);
         plugin.serverStarted();
     }
     @EventHandler

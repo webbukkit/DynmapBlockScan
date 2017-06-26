@@ -54,7 +54,7 @@ configurations {
 }
 
 dependencies {
-    dynmap group: 'us.dynmap', name: 'DynmapCore', version: "${config.Dynmap_version}${config.DynmapCore_devversion}", ext: 'jar'
+    dynmap group: 'us.dynmap', name: 'DynmapCoreAPI', version: "${config.Dynmap_version}${config.DynmapCore_devversion}", ext: 'jar'
 }
 
 processResources
@@ -79,10 +79,7 @@ processResources
 }
 
 jar {
-   classifier = "forge-1.11.2"
+   classifier = "forge-${config.minecraft_version}"
    destinationDir = project.projectDir
    from { configurations.dynmap.collect { it.isDirectory() ? it : zipTree(it) } }
-   manifest {
-//        attributes 'FMLAT': 'dynmap_at.cfg'
-    }
 }
