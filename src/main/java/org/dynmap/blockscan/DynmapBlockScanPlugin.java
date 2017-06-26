@@ -351,23 +351,27 @@ public class DynmapBlockScanPlugin
     	}
     	// Loop over the images for the element
     	for (Entry<EnumFacing, BlockFace> face : element.faces.entrySet()) {
+    	    EnumFacing facing = face.getKey();
     		BlockFace f = face.getValue();
-    		BlockSide bs = faceToSide.get(face.getKey());
+    		BlockSide bs = faceToSide.get(facing);
     		if ((bs != null) && (f.texture != null)) {
     			GridTextureFile gtf = td.registerTexture(f.texture);
-				TextureModifier tm = TextureModifier.NONE;
+				// Handle Dynmap legacy top/bottom orientation issues
+				int faceidx = (facing.getAxis() == EnumFacing.Axis.Y)?3:0;
 				if (!uvlock) {
-					switch (rot.rotateVertex(face.getKey(), 0)) {
-						case 1:
-							tm = TextureModifier.ROT90;
-							break;
-						case 2:
-							tm = TextureModifier.ROT180;
-							break;
-						case 3:
-							tm = TextureModifier.ROT270;
-							break;
-					}
+				    faceidx = rot.rotateVertex(face.getKey(), faceidx);
+				}
+                TextureModifier tm = TextureModifier.NONE;
+			    switch (faceidx) {
+					case 1:
+						tm = TextureModifier.ROT90;
+						break;
+					case 2:
+						tm = TextureModifier.ROT180;
+						break;
+					case 3:
+						tm = TextureModifier.ROT270;
+						break;
 				}
 				btr.setSideTexture(gtf, tm, bs);
     		}
