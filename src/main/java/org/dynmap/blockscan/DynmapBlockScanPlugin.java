@@ -19,6 +19,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.dynmap.blockscan.BlockStateOverrides.BlockStateOverride;
 import org.dynmap.blockscan.blockstate.BlockState;
+import org.dynmap.blockscan.blockstate.ModelRotation;
 import org.dynmap.blockscan.blockstate.Variant;
 import org.dynmap.blockscan.blockstate.VariantList;
 import org.dynmap.blockscan.model.BlockElement;
@@ -38,6 +39,7 @@ import org.dynmap.modsupport.BlockTextureRecord;
 import org.dynmap.modsupport.GridTextureFile;
 import org.dynmap.modsupport.ModSupportAPI;
 import org.dynmap.modsupport.ModTextureDefinition;
+import org.dynmap.modsupport.TextureModifier;
 
 import com.google.common.base.Charsets;
 import com.google.common.collect.ImmutableMap;
@@ -274,7 +276,7 @@ public class DynmapBlockScanPlugin
         						if ((va.elements.size() == 1) && (va.elements.get(0).isSimpleBlock())) {
         							if (br.handler != null) {
         								//logger.info(String.format("%s: %s is simple block with %s map",  blkname, var.getKey(), br.handler.getName()));
-        								registerSimpleDynmapCubes(blkname, var.getKey().metadata, va.elements.get(0));
+        								registerSimpleDynmapCubes(blkname, var.getKey().metadata, va.elements.get(0), va.rotation, va.uvlock);
         							}
         						}
         					}
@@ -314,7 +316,7 @@ public class DynmapBlockScanPlugin
     private Map<String, ModDynmapRec> modTextureDef = new HashMap<String, ModDynmapRec>();
     
         
-    public void registerSimpleDynmapCubes(String blkname, int[] meta, BlockElement element) {
+    public void registerSimpleDynmapCubes(String blkname, int[] meta, BlockElement element, ModelRotation rot, boolean uvlock) {
     	String[] tok = blkname.split(":");
     	String modid = tok[0];
     	String blknm = tok[1];
@@ -353,7 +355,21 @@ public class DynmapBlockScanPlugin
     		BlockSide bs = faceToSide.get(face.getKey());
     		if ((bs != null) && (f.texture != null)) {
     			GridTextureFile gtf = td.registerTexture(f.texture);
-    			btr.setSideTexture(gtf, bs);
+				TextureModifier tm = TextureModifier.NONE;
+				if (!uvlock) {
+					switch (rot.rotateVertex(face.getKey(), 0)) {
+						case 1:
+							tm = TextureModifier.ROT90;
+							break;
+						case 2:
+							tm = TextureModifier.ROT180;
+							break;
+						case 3:
+							tm = TextureModifier.ROT270;
+							break;
+					}
+				}
+				btr.setSideTexture(gtf, tm, bs);
     		}
     	}
     }
