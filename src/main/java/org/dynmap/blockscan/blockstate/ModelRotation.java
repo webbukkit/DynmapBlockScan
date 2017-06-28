@@ -61,13 +61,13 @@ public enum ModelRotation {
     	int[] newrot = new int[6];
     	EnumFacing[] newface = new EnumFacing[6];
     	// Pivot the X sides (W=-X, E=+X)
-    	transferFace(EnumFacing.WEST, EnumFacing.WEST, 3, newface, newrot);
-    	transferFace(EnumFacing.EAST, EnumFacing.EAST, 1, newface, newrot);
+    	transferFace(EnumFacing.WEST, EnumFacing.WEST, 1, newface, newrot);
+    	transferFace(EnumFacing.EAST, EnumFacing.EAST, 3, newface, newrot);
     	// Move others around +X
-    	transferFace(EnumFacing.SOUTH, EnumFacing.DOWN, 3, newface, newrot);
-    	transferFace(EnumFacing.NORTH, EnumFacing.UP, 3, newface, newrot);
-    	transferFace(EnumFacing.UP, EnumFacing.SOUTH, 3, newface, newrot);
-    	transferFace(EnumFacing.DOWN, EnumFacing.NORTH, 3, newface, newrot);
+    	transferFace(EnumFacing.SOUTH, EnumFacing.UP, 1, newface, newrot);
+    	transferFace(EnumFacing.NORTH, EnumFacing.DOWN, 1, newface, newrot);
+    	transferFace(EnumFacing.UP, EnumFacing.NORTH, 1, newface, newrot);
+    	transferFace(EnumFacing.DOWN, EnumFacing.SOUTH, 1, newface, newrot);
     	// Replace map
     	facemap = newface;
     	facerot = newrot;
@@ -76,13 +76,13 @@ public enum ModelRotation {
     	int[] newrot = new int[6];
     	EnumFacing[] newface = new EnumFacing[6];
     	// Pivot the Y sides (D=-Y, U=+Y)
-    	transferFace(EnumFacing.UP, EnumFacing.UP, 3, newface, newrot);
-    	transferFace(EnumFacing.DOWN, EnumFacing.DOWN, 1, newface, newrot);
+    	transferFace(EnumFacing.UP, EnumFacing.UP, 1, newface, newrot);
+    	transferFace(EnumFacing.DOWN, EnumFacing.DOWN, 3, newface, newrot);
     	// Move others around +Y
-    	transferFace(EnumFacing.SOUTH, EnumFacing.EAST, 0, newface, newrot);
-    	transferFace(EnumFacing.WEST, EnumFacing.SOUTH, 0, newface, newrot);
-    	transferFace(EnumFacing.NORTH, EnumFacing.WEST, 0, newface, newrot);
-    	transferFace(EnumFacing.EAST, EnumFacing.NORTH, 0, newface, newrot);
+    	transferFace(EnumFacing.SOUTH, EnumFacing.WEST, 0, newface, newrot);
+    	transferFace(EnumFacing.WEST, EnumFacing.NORTH, 0, newface, newrot);
+    	transferFace(EnumFacing.NORTH, EnumFacing.EAST, 0, newface, newrot);
+    	transferFace(EnumFacing.EAST, EnumFacing.SOUTH, 0, newface, newrot);
     	// Replace map
     	facemap = newface;
     	facerot = newrot;
