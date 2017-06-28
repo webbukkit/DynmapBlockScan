@@ -40,8 +40,8 @@ public enum ModelRotation {
         facemap = new EnumFacing[6];
         facerot = new int[6];
         for (EnumFacing f : EnumFacing.VALUES) {
-        	facemap[f.ordinal()] = f;
-        	facerot[f.ordinal()] = 0;
+        	facemap[f.getIndex()] = f;
+        	facerot[f.getIndex()] = 0;
         }
         // Now rotate by number of quarters around X
         for (int i = 0; i < quartersX; i++) {
@@ -54,8 +54,8 @@ public enum ModelRotation {
     }
     
     private void transferFace(EnumFacing src, EnumFacing dest, int rotation, EnumFacing[] newface, int[] newrot) {
-    	newface[dest.ordinal()] = facemap[src.ordinal()];
-    	newrot[dest.ordinal()] = (facerot[src.ordinal()] + rotation) % 4;
+    	newface[dest.getIndex()] = facemap[src.getIndex()];
+    	newrot[dest.getIndex()] = (facerot[src.getIndex()] + rotation) % 4;
     }
     private void rotateX() {
     	int[] newrot = new int[6];
@@ -64,10 +64,10 @@ public enum ModelRotation {
     	transferFace(EnumFacing.WEST, EnumFacing.WEST, 1, newface, newrot);
     	transferFace(EnumFacing.EAST, EnumFacing.EAST, 3, newface, newrot);
     	// Move others around +X
-    	transferFace(EnumFacing.SOUTH, EnumFacing.UP, 1, newface, newrot);
-    	transferFace(EnumFacing.NORTH, EnumFacing.DOWN, 1, newface, newrot);
-    	transferFace(EnumFacing.UP, EnumFacing.NORTH, 1, newface, newrot);
-    	transferFace(EnumFacing.DOWN, EnumFacing.SOUTH, 1, newface, newrot);
+    	transferFace(EnumFacing.SOUTH, EnumFacing.DOWN, 0, newface, newrot);
+    	transferFace(EnumFacing.NORTH, EnumFacing.UP, 0, newface, newrot);
+    	transferFace(EnumFacing.UP, EnumFacing.SOUTH, 2, newface, newrot); 
+    	transferFace(EnumFacing.DOWN, EnumFacing.NORTH, 2, newface, newrot);
     	// Replace map
     	facemap = newface;
     	facerot = newrot;
@@ -76,24 +76,24 @@ public enum ModelRotation {
     	int[] newrot = new int[6];
     	EnumFacing[] newface = new EnumFacing[6];
     	// Pivot the Y sides (D=-Y, U=+Y)
-    	transferFace(EnumFacing.UP, EnumFacing.UP, 1, newface, newrot);
-    	transferFace(EnumFacing.DOWN, EnumFacing.DOWN, 3, newface, newrot);
+    	transferFace(EnumFacing.UP, EnumFacing.UP, 3, newface, newrot);
+    	transferFace(EnumFacing.DOWN, EnumFacing.DOWN, 1, newface, newrot);
     	// Move others around +Y
-    	transferFace(EnumFacing.SOUTH, EnumFacing.WEST, 0, newface, newrot);
-    	transferFace(EnumFacing.WEST, EnumFacing.NORTH, 0, newface, newrot);
-    	transferFace(EnumFacing.NORTH, EnumFacing.EAST, 0, newface, newrot);
-    	transferFace(EnumFacing.EAST, EnumFacing.SOUTH, 0, newface, newrot);
+    	transferFace(EnumFacing.SOUTH, EnumFacing.EAST, 0, newface, newrot);
+    	transferFace(EnumFacing.WEST, EnumFacing.SOUTH, 0, newface, newrot);
+    	transferFace(EnumFacing.NORTH, EnumFacing.WEST, 0, newface, newrot);
+    	transferFace(EnumFacing.EAST, EnumFacing.NORTH, 0, newface, newrot);
     	// Replace map
     	facemap = newface;
     	facerot = newrot;
     }
 
     public EnumFacing rotateFace(EnumFacing facing) {
-        return facemap[facing.ordinal()];
+        return facemap[facing.getIndex()];
     }
     
     public int rotateFaceOrientation(EnumFacing facing) {
-    	return 90 * facerot[facing.ordinal()];
+    	return 90 * facerot[facing.getIndex()];
     }
 
     public static ModelRotation getModelRotation(int x, int y) {
