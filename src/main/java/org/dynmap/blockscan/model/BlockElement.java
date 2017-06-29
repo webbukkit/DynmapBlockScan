@@ -50,7 +50,7 @@ public class BlockElement {
     			DynmapBlockScanPlugin.logger.info("Unresolved texture ref: " + f.texture);
     		}
     		else {
-    			faces.put(mrot.rotateFace(face.getKey()), new BlockFace(f, v));
+    			faces.put(mrot.rotateFace(face.getKey()), new BlockFace(f, v, mrot.rotateFaceOrientation(face.getKey())));
     		}
     	}
     }

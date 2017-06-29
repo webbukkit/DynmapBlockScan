@@ -51,6 +51,16 @@ public enum ModelRotation {
         for (int i = 0; i < quartersY; i++) {
         	rotateY();
         }
+        // Invert map
+        EnumFacing[] newface = new EnumFacing[6];
+        int[] newrot = new int[6];
+        for (int i = 0; i < 6; i++) {
+            EnumFacing f = facemap[i];
+            newface[f.getIndex()] = EnumFacing.VALUES[i];
+            newrot[f.getIndex()] = facerot[i];
+        }
+        facemap = newface;
+        facerot = newrot;
     }
     
     private void transferFace(EnumFacing src, EnumFacing dest, int rotation, EnumFacing[] newface, int[] newrot) {
@@ -64,10 +74,10 @@ public enum ModelRotation {
     	transferFace(EnumFacing.WEST, EnumFacing.WEST, 1, newface, newrot);
     	transferFace(EnumFacing.EAST, EnumFacing.EAST, 3, newface, newrot);
     	// Move others around +X
-    	transferFace(EnumFacing.SOUTH, EnumFacing.DOWN, 0, newface, newrot);
-    	transferFace(EnumFacing.NORTH, EnumFacing.UP, 0, newface, newrot);
-    	transferFace(EnumFacing.UP, EnumFacing.SOUTH, 2, newface, newrot); 
-    	transferFace(EnumFacing.DOWN, EnumFacing.NORTH, 2, newface, newrot);
+    	transferFace(EnumFacing.SOUTH, EnumFacing.UP, 0, newface, newrot);
+    	transferFace(EnumFacing.NORTH, EnumFacing.DOWN, 2, newface, newrot);
+    	transferFace(EnumFacing.UP, EnumFacing.NORTH, 2, newface, newrot); 
+    	transferFace(EnumFacing.DOWN, EnumFacing.SOUTH, 0, newface, newrot);
     	// Replace map
     	facemap = newface;
     	facerot = newrot;
@@ -79,10 +89,10 @@ public enum ModelRotation {
     	transferFace(EnumFacing.UP, EnumFacing.UP, 3, newface, newrot);
     	transferFace(EnumFacing.DOWN, EnumFacing.DOWN, 1, newface, newrot);
     	// Move others around +Y
-    	transferFace(EnumFacing.SOUTH, EnumFacing.EAST, 0, newface, newrot);
-    	transferFace(EnumFacing.WEST, EnumFacing.SOUTH, 0, newface, newrot);
-    	transferFace(EnumFacing.NORTH, EnumFacing.WEST, 0, newface, newrot);
-    	transferFace(EnumFacing.EAST, EnumFacing.NORTH, 0, newface, newrot);
+    	transferFace(EnumFacing.SOUTH, EnumFacing.WEST, 0, newface, newrot);
+    	transferFace(EnumFacing.WEST, EnumFacing.NORTH, 0, newface, newrot);
+    	transferFace(EnumFacing.NORTH, EnumFacing.EAST, 0, newface, newrot);
+    	transferFace(EnumFacing.EAST, EnumFacing.SOUTH, 0, newface, newrot);
     	// Replace map
     	facemap = newface;
     	facerot = newrot;

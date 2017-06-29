@@ -357,15 +357,12 @@ public class DynmapBlockScanPlugin
     		if ((bs != null) && (f.texture != null)) {
     			GridTextureFile gtf = td.registerTexture(f.texture);
 				// Handle Dynmap legacy top/bottom orientation issues
-				int faceidx;
+				int faceidx = ((facing.getAxis() == EnumFacing.Axis.Y)?270:0) + (360-f.rotation);
 				if (!uvlock) {
-				    faceidx = rot.rotateFaceOrientation(face.getKey());
-				}
-				else {
-					faceidx = (facing.getAxis() == EnumFacing.Axis.Y)?270:0;
+				    faceidx = faceidx + f.facerotation;
 				}
                 TextureModifier tm = TextureModifier.NONE;
-			    switch (faceidx) {
+			    switch (faceidx % 360) {
 					case 90:
 						tm = TextureModifier.ROT90;
 						break;

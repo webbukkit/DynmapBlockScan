@@ -7,13 +7,20 @@ public class BlockFace {
     public int tintIndex = -1;
     public String texture;
     public float[] uv = null;
+    public int rotation = 0;
     
-    public BlockFace() {}
+    // From transforms
+    public int facerotation = 0;
     
-    public BlockFace(BlockFace src, String txt) {
+    public BlockFace() {
+    }
+    
+    public BlockFace(BlockFace src, String txt, int rot) {
     	cullface = src.cullface;
     	tintIndex = src.tintIndex;
     	texture = txt;
+    	rotation = src.rotation;
+    	facerotation = (src.facerotation + rot) % 360;
     	if (src.uv != null) {
     		uv = Arrays.copyOf(src.uv, src.uv.length);
     	}
