@@ -407,9 +407,14 @@ public class DynmapBlockScanPlugin
         for (ModContainer mc : mcl) {
             Object mod = mc.getMod();
             if (mod == null) continue;
-            InputStream is = mod.getClass().getClassLoader().getResourceAsStream(rname);
-            if (is == null) {
-                is = mod.getClass().getClassLoader().getResourceAsStream(rname_lc);
+            InputStream is = null;
+            try {
+                is = mod.getClass().getClassLoader().getResourceAsStream(rname);
+                if (is == null) {
+                    is = mod.getClass().getClassLoader().getResourceAsStream(rname_lc);
+                }
+            } catch (Error x) {
+                logger.info("Error loading " + rname + " from " + mc.getModId());
             }
             if (is != null) {
                 return is;
