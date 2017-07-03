@@ -4,7 +4,7 @@ import java.util.Arrays;
 
 public class BlockFace {
     public String cullface = null;
-    public int tintIndex = -1;
+    public int tintindex = -1;
     public String texture;
     public float[] uv = null;
     public int rotation = 0;
@@ -17,7 +17,7 @@ public class BlockFace {
     
     public BlockFace(BlockFace src, String txt, int rot) {
     	cullface = src.cullface;
-    	tintIndex = src.tintIndex;
+    	tintindex = src.tintindex;
     	texture = txt;
     	rotation = src.rotation;
     	facerotation = (src.facerotation + rot) % 360;

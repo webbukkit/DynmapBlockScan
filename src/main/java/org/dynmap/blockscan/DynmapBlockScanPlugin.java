@@ -18,10 +18,15 @@ import java.util.Set;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.dynmap.blockscan.BlockStateOverrides.BlockStateOverride;
+import org.dynmap.blockscan.BlockStateOverrides.BlockTintOverride;
 import org.dynmap.blockscan.blockstate.BlockState;
+import org.dynmap.blockscan.blockstate.Condition;
+import org.dynmap.blockscan.blockstate.ForgeVariantV1;
+import org.dynmap.blockscan.blockstate.ForgeVariantV1List;
 import org.dynmap.blockscan.blockstate.ModelRotation;
 import org.dynmap.blockscan.blockstate.Variant;
 import org.dynmap.blockscan.blockstate.VariantList;
+import org.dynmap.blockscan.blockstate.VariantListMap;
 import org.dynmap.blockscan.model.BlockElement;
 import org.dynmap.blockscan.model.BlockFace;
 import org.dynmap.blockscan.model.BlockModel;
@@ -34,17 +39,21 @@ import org.dynmap.blockscan.statehandlers.SnowyMetadataStateHandler;
 import org.dynmap.blockscan.statehandlers.StairMetadataStateHandler;
 import org.dynmap.blockscan.statehandlers.StateContainer;
 import org.dynmap.blockscan.statehandlers.StateContainer.StateRec;
+import org.dynmap.blockscan.statehandlers.StateContainer.WellKnownBlockClasses;
 import org.dynmap.modsupport.BlockSide;
 import org.dynmap.modsupport.BlockTextureRecord;
 import org.dynmap.modsupport.GridTextureFile;
 import org.dynmap.modsupport.ModSupportAPI;
 import org.dynmap.modsupport.ModTextureDefinition;
+import org.dynmap.modsupport.TextureFile;
 import org.dynmap.modsupport.TextureModifier;
 
 import com.google.common.base.Charsets;
 import com.google.common.collect.ImmutableMap;
 import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 
+import akka.event.Logging;
 import jline.internal.Log;
 
 import org.dynmap.blockscan.statehandlers.DoorStateHandler;
@@ -71,8 +80,9 @@ public class DynmapBlockScanPlugin
     public static DynmapBlockScanPlugin plugin;
     
     private Map<EnumFacing, BlockSide> faceToSide = new HashMap<EnumFacing, BlockSide>();
-    
+    private BlockStateOverrides overrides;
 
+    
     public static class BlockRecord {
     	public StateContainer sc;
     	public Map<StateRec, List<VariantList>> varList;	// Model references for block
@@ -120,10 +130,11 @@ public class DynmapBlockScanPlugin
         
         // Load override resources
         InputStream override_str = openResource("dynmapblockscan", "blockStateOverrides.json");
-        BlockStateOverrides overrides;
         if (override_str != null) {
         	Reader rdr = new InputStreamReader(override_str, Charsets.UTF_8);
-        	Gson parse = new Gson();
+            GsonBuilder gb = new GsonBuilder(); // Start with builder
+            gb.registerTypeAdapter(BlockTintOverride.class, new BlockTintOverride.Deserializer()); // Add Condition handler1
+            Gson parse = gb.create();
         	overrides = parse.fromJson(rdr, BlockStateOverrides.class);
         	try {
 				override_str.close();
@@ -278,7 +289,7 @@ public class DynmapBlockScanPlugin
         						if ((va.elements.size() == 1) && (va.elements.get(0).isSimpleBlock())) {
         							if (br.handler != null) {
         								//logger.info(String.format("%s: %s is simple block with %s map",  blkname, var.getKey(), br.handler.getName()));
-        								registerSimpleDynmapCubes(blkname, var.getKey().metadata, va.elements.get(0), va.rotation, va.uvlock);
+        								registerSimpleDynmapCubes(blkname, var.getKey(), va.elements.get(0), va.rotation, va.uvlock, br.sc.getBlockType());
         							}
         						}
         					}
@@ -296,11 +307,11 @@ public class DynmapBlockScanPlugin
     
     private static class ModDynmapRec {
     	ModTextureDefinition txtDef;
-    	Map<String, GridTextureFile> textureIDsByPath = new HashMap<String, GridTextureFile>();
+    	Map<String, TextureFile> textureIDsByPath = new HashMap<String, TextureFile>();
     	int nextTxtID = 1;
     	
-    	public GridTextureFile registerTexture(String txtpath) {
-    		GridTextureFile txtf = textureIDsByPath.get(txtpath);
+    	public TextureFile registerTexture(String txtpath) {
+    		TextureFile txtf = textureIDsByPath.get(txtpath);
     		if (txtf == null) {
     			String txtid = String.format("txt%04d", nextTxtID);
     			nextTxtID++;	// Assign next ID
@@ -314,14 +325,30 @@ public class DynmapBlockScanPlugin
     		}
     		return txtf;
     	}
+        public TextureFile registerBiomeTexture(String txtpath) {
+            TextureFile txtf = textureIDsByPath.get(txtpath);
+            if (txtf == null) {
+                String txtid = String.format("txt%04d", nextTxtID);
+                nextTxtID++;    // Assign next ID
+                // Split path to build full path
+                String[] ptok = txtpath.split(":");
+                String fname = "assets/" + ptok[0] + "/textures/" + ptok[1] + ".png";
+                txtf = txtDef.registerBiomeTextureFile(txtid, fname);
+                if (txtf != null) {
+                    textureIDsByPath.put(txtpath, txtf);
+                }
+            }
+            return txtf;
+        }
     }
     private Map<String, ModDynmapRec> modTextureDef = new HashMap<String, ModDynmapRec>();
     
         
-    public void registerSimpleDynmapCubes(String blkname, int[] meta, BlockElement element, ModelRotation rot, boolean uvlock) {
+    public void registerSimpleDynmapCubes(String blkname, StateRec state, BlockElement element, ModelRotation rot, boolean uvlock, WellKnownBlockClasses type) {
     	String[] tok = blkname.split(":");
     	String modid = tok[0];
     	String blknm = tok[1];
+    	int[] meta = state.metadata;
     	if (tok[0].equals("minecraft")) {	// Skip vanilla
     		return;
     	}
@@ -351,13 +378,44 @@ public class DynmapBlockScanPlugin
     	for (int metaval : meta) {
     		btr.setMetaValue(metaval);
     	}
+    	boolean tinting = false;   // Watch out for tinting
+        for (BlockFace f : element.faces.values()) {
+            if (f.tintindex >= 0) {
+                tinting = true;
+                break;
+            }
+        }
+        // If block has tinting, try to figure out what to use
+        if (tinting) {
+            String txtfile = null;
+            BlockTintOverride ovr = overrides.getTinting(modid, blknm, state.getProperties());
+            if (ovr == null) { // No match, need to guess
+                switch (type) {
+                    case LEAVES:
+                    case VINES:
+                        txtfile = "minecraft:colormap/foliage";
+                        break;
+                    default:
+                        txtfile = "minecraft:colormap/grass";
+                        break;
+                }
+            }
+            else {
+                txtfile = ovr.colormap[0];
+            }
+            if (txtfile != null) {
+                TextureFile gtf = td.registerBiomeTexture(txtfile);
+                btr.setBlockColorMapTexture(gtf);
+            }
+        }
+       
     	// Loop over the images for the element
     	for (Entry<EnumFacing, BlockFace> face : element.faces.entrySet()) {
     	    EnumFacing facing = face.getKey();
     		BlockFace f = face.getValue();
     		BlockSide bs = faceToSide.get(facing);
     		if ((bs != null) && (f.texture != null)) {
-    			GridTextureFile gtf = td.registerTexture(f.texture);
+    			TextureFile gtf = td.registerTexture(f.texture);
 				// Handle Dynmap legacy top/bottom orientation issues
 				int faceidx = ((facing.getAxis() == EnumFacing.Axis.Y)?270:0) + (360-f.rotation);
 				if (!uvlock) {

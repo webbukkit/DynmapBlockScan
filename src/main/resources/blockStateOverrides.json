@@ -33,5 +33,13 @@
          "double_stone_slab2": { "baseNameProperty": "variant", "nameSuffix": "_double_slab" },
          "dirt": { "baseNameProperty": "variant" }
       }
+   },
+   "tinting": {
+      "biomesoplenty": {
+          "flower_0": [
+              { "state": "variant=clover", "colormap": [ "minecraft:colormap/grass" ] },
+              { "state": "variant=cloverpatch", "colormap": [ "minecraft:colormap/grass" ] }
+          ]
+      }
    }
 }

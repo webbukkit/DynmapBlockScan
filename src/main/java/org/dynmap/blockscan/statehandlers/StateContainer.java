@@ -67,9 +67,22 @@ public class StateContainer {
 		}
 	}
 	
+    public enum WellKnownBlockClasses {
+        NONE,
+        LEAVES,
+        CROPS,
+        FLOWER,
+        TALLGRASS,
+        BUSH,
+        GRASS,
+        LIQUID,
+        VINES
+    }
+
 	protected Map<String, List<String>> renderProperties = new HashMap<String, List<String>>();
 	protected final List<StateRec> records = new ArrayList<StateRec>();
 	protected int defStateIndex;
+	protected WellKnownBlockClasses type = WellKnownBlockClasses.NONE;
 	
 	public List<StateRec> getValidStates() {
 		return records;
@@ -85,6 +98,10 @@ public class StateContainer {
 	
 	public List<String> getProperty(String prop) {
 		return renderProperties.get(prop);
+	}
+	
+	public WellKnownBlockClasses getBlockType() {
+	    return type;
 	}
 	
 	@Override

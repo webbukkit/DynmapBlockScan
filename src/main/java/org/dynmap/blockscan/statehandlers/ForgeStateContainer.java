@@ -1,6 +1,5 @@
 package org.dynmap.blockscan.statehandlers;
 
-import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -10,8 +9,15 @@ import java.util.Set;
 import com.google.common.collect.ImmutableMap;
 
 import net.minecraft.block.Block;
+import net.minecraft.block.BlockBush;
+import net.minecraft.block.BlockCrops;
+import net.minecraft.block.BlockFlower;
+import net.minecraft.block.BlockGrass;
+import net.minecraft.block.BlockLeaves;
+import net.minecraft.block.BlockLiquid;
+import net.minecraft.block.BlockTallGrass;
+import net.minecraft.block.BlockVine;
 import net.minecraft.block.properties.IProperty;
-import net.minecraft.block.state.BlockStateContainer;
 import net.minecraft.block.state.IBlockState;
 import net.minecraft.util.IStringSerializable;
 
@@ -67,5 +73,30 @@ public class ForgeStateContainer extends StateContainer {
 				}
 			}
 		}
+		// Check for well-known block types
+		if (blk instanceof BlockLeaves) {
+		    type = WellKnownBlockClasses.LEAVES;
+		}
+		else if (blk instanceof BlockCrops) {
+            type = WellKnownBlockClasses.CROPS;
+		}
+		else if (blk instanceof BlockFlower) {
+		    type = WellKnownBlockClasses.FLOWER;
+		}
+		else if (blk instanceof BlockTallGrass) {
+            type = WellKnownBlockClasses.TALLGRASS;
+		}
+		else if (blk instanceof BlockVine) {
+		    type = WellKnownBlockClasses.VINES;
+		}
+        else if (blk instanceof BlockBush) {
+            type = WellKnownBlockClasses.BUSH;
+        }
+        else if (blk instanceof BlockGrass) {
+            type = WellKnownBlockClasses.GRASS;
+        }
+        else if (blk instanceof BlockLiquid) {
+            type = WellKnownBlockClasses.LIQUID;
+        }
 	}
 }
