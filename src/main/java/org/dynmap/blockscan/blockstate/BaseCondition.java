@@ -4,6 +4,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.Map.Entry;
 
+import org.dynmap.blockscan.DynmapBlockScanPlugin;
+
 import com.google.common.collect.ImmutableMap;
 
 public class BaseCondition implements Condition {
@@ -56,7 +58,12 @@ public class BaseCondition implements Condition {
 	
 	@Override
 	public String toString() {
-		return keyValuePairs.toString();
+	    if (unmatchedValue.equals("")) {
+	        return keyValuePairs.toString();
+	    }
+	    else {
+	        return unmatchedValue;
+	    }
 	}
 	
 	@Override
@@ -76,6 +83,7 @@ public class BaseCondition implements Condition {
 	
 	// Check for condition match : matches if any values in condition match corresponding values in provided properties
 	public boolean matches(Map<String, String> props) {
+	    boolean is_match = true;
 		for (Entry<String, String> es : keyValuePairs.entrySet()) {
 			String esk = es.getKey();
 			String v = props.get(esk);
@@ -98,7 +106,11 @@ public class BaseCondition implements Condition {
 				return false;
 			}
 		}
-		return true;
+		// If no conditions, only match if no unmatched value or 'normal' (skip 'inventory' and the like)
+		if (this.keyValuePairs.isEmpty()) {
+		    is_match = (unmatchedValue.equals("") || (unmatchedValue.equals("normal")));
+		}
+		return is_match;
 	}
 	// Add distinct property keys to set
 	public void addPropKeys(Set<String> props) {

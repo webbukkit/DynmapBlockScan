@@ -48,6 +48,7 @@ public class BlockElement {
     		String v = txtrefs.findTextureByID(f.texture);	// Resolve texture
     		if (v == null) {	
     			DynmapBlockScanPlugin.logger.info("Unresolved texture ref: " + f.texture);
+    			DynmapBlockScanPlugin.logger.info(txtrefs.toString());
     		}
     		else {
     			faces.put(mrot.rotateFace(face.getKey()), new BlockFace(f, v, mrot.rotateFaceOrientation(face.getKey())));

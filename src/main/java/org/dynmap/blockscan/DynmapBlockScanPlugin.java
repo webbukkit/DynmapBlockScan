@@ -136,6 +136,10 @@ public class DynmapBlockScanPlugin
         }
 
         Map<String, BlockRecord> blockRecords = new HashMap<String, BlockRecord>();
+
+        // Now process models from block records
+        Map<String, BlockModel> models = new HashMap<String, BlockModel>();
+        
         // Scan blocks and block states
         for (Block b : Block.REGISTRY) {
             ResourceLocation rl = b.getRegistryName();
@@ -186,7 +190,7 @@ public class DynmapBlockScanPlugin
             	br.varList = new HashMap<StateRec, List<VariantList>>();
         		// Loop through rendering states in state container
         		for (StateRec sr : br.sc.getValidStates()) {
-        			List<VariantList> vlist = blockstate.getMatchingVariants(sr.getProperties());
+        			List<VariantList> vlist = blockstate.getMatchingVariants(sr.getProperties(), models);
         			br.varList.put(sr, vlist);
         		}
         	}
@@ -207,8 +211,6 @@ public class DynmapBlockScanPlugin
             blockRecords.put(rl.toString(), br);
         }
         
-        // Now process models from block records
-        Map<String, BlockModel> models = new HashMap<String, BlockModel>();
         logger.info("Loading models....");
         for (String blkname : blockRecords.keySet()) {
         	BlockRecord br = blockRecords.get(blkname);
@@ -270,7 +272,7 @@ public class DynmapBlockScanPlugin
         			for (VariantList vl : var.getValue()) {
         				for (Variant va : vl.variantList) {
         					if(va.generateElements(models) == false) {
-        						logger.warning(va.toString() + ": failed to generate elements");
+        						logger.warning(va.toString() + ": failed to generate elements for " + blkname + "[" + var.getKey() + "]");
         					}
         					else {
         						if ((va.elements.size() == 1) && (va.elements.get(0).isSimpleBlock())) {

@@ -21,31 +21,56 @@ public class Variant {
 	public boolean uvlock = false;
 	public int weight = 1;
 	
+	// Variant list from submodels, if any
+	public VariantList subvariants;
+	
 	// Normalized model ID
 	public String modelID;
 	// Generated and resolved element list
 	public List<BlockElement> elements;
 	
+	public Variant() {}
+	
+	public Variant(String mod, Integer x, Integer y, Boolean uv, Integer wt) {
+	    this.model = this.modelID = mod;
+	    this.rotation = ModelRotation.getModelRotation((x != null)?x:0, (y != null)?y:0);
+	    if (wt != null) {
+	        this.weight = wt;
+	    }
+	    if (uv != null) {
+	        this.uvlock = uv;
+	    }
+	}
 	// Generate and resolve element list for variant
 	public boolean generateElements(Map<String, BlockModel> models) {
+	    elements = new ArrayList<BlockElement>();
 		BlockModel basemod = models.get(modelID);	// Loop up our model
-		if (basemod == null) {
-			return false;
+		if (basemod != null) {
+		    // Find topmost elements
+		    BlockModel elemmod = basemod;
+		    while (elemmod.elements.isEmpty()) {
+		        elemmod = elemmod.parentModel;	// Get parent model
+		        if (elemmod == null) {	// Not found, we've got no elements
+		            break;
+		        }
+		    }
+		    // Now, we're going to build copies of the elements with resolved models
+		    if (elemmod != null) {
+		        for (BlockElement elem : elemmod.elements) {
+		            elements.add(new BlockElement(elem, basemod, rotation, uvlock));
+		        }
+		    }
 		}
-		// Find topmost elements
-		BlockModel elemmod = basemod;
-		while (elemmod.elements.isEmpty()) {
-			elemmod = elemmod.parentModel;	// Get parent model
-			if (elemmod == null) {	// Not found, we've got no elements
-				return false;
-			}
+		// If we have subvariants (from forge submodels), add these too
+		if (this.subvariants != null) {
+		    for (Variant subv : this.subvariants.variantList) {
+		        subv.generateElements(models);    // Generate their elements
+		        if (subv.elements != null) {
+		            elements.addAll(subv.elements);   // And add them all to ours
+		        }
+		    }
 		}
-		// Now, we're going to build copies of the elements with resolved models
-		elements = new ArrayList<BlockElement>();
-		for (BlockElement elem : elemmod.elements) {
-			elements.add(new BlockElement(elem, basemod, rotation, uvlock));
-		}
-		return true;
+		return (elements.size() > 0);
 	}
 	
 	@Override

@@ -9,6 +9,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.Map.Entry;
 
+import org.dynmap.blockscan.model.BlockModel;
+
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonDeserializationContext;
@@ -31,7 +33,7 @@ public class BlockState {
 	
 	// Forge specific
 	public ForgeVariantV1 defaults;
-	public Map<String, ForgeVariantV1List> forge_variants;
+	public Map<BaseCondition, ForgeVariantV1List> forge_variants;
 	
 	// Property value based nested state mapping
 	public String nestedProp = null;
@@ -79,11 +81,19 @@ public class BlockState {
 				}
 			}
 		}
+		if (forge_variants != null) {
+		    for (Entry<BaseCondition, ForgeVariantV1List> var : forge_variants.entrySet()) {
+		        BaseCondition bc = var.getKey();
+		        bc.addPropKeys(props);    // Add keys from variant conditions
+		    }
+		}
 		return props;
 	}
 	
     // Build list of Variant lists from parsed block state and match given properties
-    public List<VariantList> getMatchingVariants(Map<String, String> prop) {
+	// Note: returned value is list of alternative lists: all elements of top level list apply, with one random choice
+	// picked from the sublist (VariantList) when more than one is present
+    public List<VariantList> getMatchingVariants(Map<String, String> prop, Map<String, BlockModel> models) {
     	List<VariantList> vlist = new ArrayList<VariantList>();
     	
     	// If bstate has variant list map, walk it - only match first one
@@ -107,13 +117,26 @@ public class BlockState {
     			}
     		}
     	}
+    	// If forge variants, walk it - accumulate all matches
+    	if (this.forge_variants != null) {
+    	    ForgeVariantV1List resolved = buildResolvedForgeList(prop);
+    	    ArrayList<Variant> vanilla = new ArrayList<Variant>();
+    	    // Now, generate vanilla variant for each
+    	    for (ForgeVariantV1 var : resolved.variantList) {
+    	        Variant v = var.generateVanilla(models);
+    	        if (v != null) {
+    	            vanilla.add(v);
+    	        }
+    	    }
+    	    vlist.add(new VariantList(vanilla));
+    	}
     	// If nested, process request
     	if (this.nestedProp != null) {
     		String pval = prop.get(this.nestedProp);
     		if (pval != null) {
     			BlockState bs = this.nestedValueMap(pval);
     			if (bs != null) {
-    				vlist = bs.getMatchingVariants(prop);
+    				vlist = bs.getMatchingVariants(prop, models);
     			}
     		}
     	}
@@ -137,11 +160,11 @@ public class BlockState {
                     bs.defaults = context.deserialize(obj.getAsJsonObject("defaults"), ForgeVariantV1.class);
                 }
                 // Go through variants
-                bs.forge_variants = new HashMap<String, ForgeVariantV1List>();
+                bs.forge_variants = new HashMap<BaseCondition, ForgeVariantV1List>();
                 if (obj.has("variants")) {
                     for (Entry<String, JsonElement> e : obj.get("variants").getAsJsonObject().entrySet()) {
                         if (e.getValue().isJsonArray()) {
-                            bs.forge_variants.put(e.getKey(), context.deserialize(e.getValue(), ForgeVariantV1List.class));
+                            bs.forge_variants.put(new BaseCondition(e.getKey()), context.deserialize(e.getValue(), ForgeVariantV1List.class));
                         }
                         else {
                             JsonObject vobj = e.getValue().getAsJsonObject();
@@ -149,11 +172,11 @@ public class BlockState {
                             if(vobj.entrySet().iterator().next().getValue().isJsonObject()) {
                                 // Assume all subelements are values for key=value test
                                 for (Entry<String, JsonElement> se : vobj.entrySet()) {
-                                    bs.forge_variants.put(e.getKey() + "=" + se.getKey(), context.deserialize(se.getValue(), ForgeVariantV1List.class));
+                                    bs.forge_variants.put(new BaseCondition(e.getKey() + "=" + se.getKey()), context.deserialize(se.getValue(), ForgeVariantV1List.class));
                                 }
                             }
                             else {
-                                bs.forge_variants.put(e.getKey(), context.deserialize(e.getValue(), ForgeVariantV1List.class));
+                                bs.forge_variants.put(new BaseCondition(e.getKey()), context.deserialize(e.getValue(), ForgeVariantV1List.class));
                             }
                         }
                     }
@@ -170,6 +193,23 @@ public class BlockState {
             }
             return bs;
         }
+    }
+    // Build resolved forge variant list
+    private ForgeVariantV1List buildResolvedForgeList(Map<String,String> prop) {
+        // Create empty initial list
+        ForgeVariantV1List varlist = new ForgeVariantV1List();
+        // Now, see what variants also match, and apply them too
+        for (Entry<BaseCondition, ForgeVariantV1List> var : this.forge_variants.entrySet()) {
+            if (var.getKey().matches(prop)) {
+                varlist.applyValues(var.getValue(), false);
+            }
+        }
+        // Apply defaults to resulting list
+        for (ForgeVariantV1 var : varlist.variantList) {
+            var.applyDefaults(defaults);
+        }
+        
+        return varlist;
     }
 
 }

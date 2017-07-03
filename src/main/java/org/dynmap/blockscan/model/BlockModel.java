@@ -1,22 +1,13 @@
 package org.dynmap.blockscan.model;
 
 import java.util.Collections;
-import java.util.HashSet;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
+import java.util.Map.Entry;
 
-import org.dynmap.blockscan.blockstate.BlockState;
-
-import com.google.common.annotations.VisibleForTesting;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-
-import net.minecraft.client.renderer.block.model.BlockPart;
-import net.minecraft.client.renderer.block.model.ItemCameraTransforms;
-import net.minecraft.client.renderer.block.model.ItemOverride;
-import net.minecraft.client.renderer.block.model.ModelBlock;
-import net.minecraft.util.ResourceLocation;
 
 // Top level container class for JSON parsed Block Model data
 public class BlockModel implements TextureReferences {
@@ -27,12 +18,37 @@ public class BlockModel implements TextureReferences {
 	// Ambient occlusion
     public final boolean ambientOcclusion = true;
     // Texture aliases
-    public final Map<String, String> textures = Collections.emptyMap();
+    public final Map<String, String> textures;
     // Parent model ID
-    public final String parent = null;
+    public final String parent;
     // Resolved reference to loaded parent model
     public BlockModel parentModel = null;
     
+    public BlockModel() {
+        this.parent = null;
+        this.textures = Collections.emptyMap();
+    }
+    public BlockModel(String par, Map<String, String> txt) {
+        this.textures = new HashMap<String, String>();
+        if (txt != null) {
+            for (Entry<String, String> ent : txt.entrySet()) {
+                this.textures.put(ent.getKey(), ent.getValue());
+            }
+        }
+        if (par != null) {
+            String[] tok = par.split(":");
+            if (tok.length == 1) {
+                par = "minecraft:block/" + tok[0];
+            }
+            else {
+                par = tok[0] + ":block/" + tok[1];
+            }
+            this.parent = par;
+        }
+        else {
+            this.parent = null;
+        }
+    }
     @Override
 	public String toString() {
 		StringBuilder sb = new StringBuilder("{");
@@ -83,7 +99,7 @@ public class BlockModel implements TextureReferences {
 					match = true;
 					txtid = mod.textures.get(txtid);	// Match : get value
 				}
-				else {	// Elxe, move to parent
+				else {	// Else, move to parent
 					mod = mod.parentModel;
 					// Not found, we're done
 					if (mod == null) {
