@@ -40,6 +40,8 @@ import org.dynmap.blockscan.statehandlers.StairMetadataStateHandler;
 import org.dynmap.blockscan.statehandlers.StateContainer;
 import org.dynmap.blockscan.statehandlers.StateContainer.StateRec;
 import org.dynmap.blockscan.statehandlers.StateContainer.WellKnownBlockClasses;
+import org.dynmap.blockscan.util.Matrix3D;
+import org.dynmap.blockscan.util.Vector3D;
 import org.dynmap.modsupport.BlockSide;
 import org.dynmap.modsupport.BlockTextureRecord;
 import org.dynmap.modsupport.CuboidBlockModel;
@@ -47,9 +49,11 @@ import org.dynmap.modsupport.GridTextureFile;
 import org.dynmap.modsupport.ModModelDefinition;
 import org.dynmap.modsupport.ModSupportAPI;
 import org.dynmap.modsupport.ModTextureDefinition;
+import org.dynmap.modsupport.PatchBlockModel;
 import org.dynmap.modsupport.TextureFile;
 import org.dynmap.modsupport.TextureModifier;
 import org.dynmap.modsupport.TransparencyMode;
+import org.dynmap.renderer.RenderPatchFactory.SideVisible;
 
 import com.google.common.base.Charsets;
 import com.google.common.collect.ImmutableMap;
@@ -296,12 +300,19 @@ public class DynmapBlockScanPlugin
         								registerSimpleDynmapCubes(blkname, var.getKey(), va.elements.get(0), va.rotation, va.uvlock, br.sc.getBlockType());
         							}
         						}
-        						else {    // Else, handle any simple cuboid elements (skip others for now...)
+        						// Else if simple cuboid
+        						else if (isSimpleCuboid(va.elements)) {
                                     if (br.handler != null) {
                                         //logger.info(String.format("%s: %s is simple block with %s map",  blkname, var.getKey(), br.handler.getName()));
                                         registerSimpleDynmapCuboids(blkname, var.getKey(), va.elements, va.rotation, va.uvlock, br.sc.getBlockType());
                                     }
         						}
+                                else  {
+                                    if (br.handler != null) {
+                                        //logger.info(String.format("%s: %s is simple block with %s map",  blkname, var.getKey(), br.handler.getName()));
+                                        registerDynmapPatches(blkname, var.getKey(), va.elements, va.rotation, va.uvlock, br.sc.getBlockType());
+                                    }
+                                }
         					}
         				}
         			}
@@ -365,13 +376,26 @@ public class DynmapBlockScanPlugin
             }
             return btr;
         }
-        // Crete cuboid model
+        // Create cuboid model
         public CuboidBlockModel getCuboidModelRec(String blknm, int[] meta) {
             if (this.modDef == null) {
                 this.modDef = this.txtDef.getModelDefinition();
             }
             CuboidBlockModel mod = this.modDef.addCuboidModel(blknm);
             DynmapBlockScanPlugin.logger.info("Created cuboid model for " + blknm + Arrays.toString(meta));
+            // Set matching metadata
+            for (int metaval : meta) {
+                mod.setMetaValue(metaval);
+            }
+            return mod;
+        }
+        // Create patch model
+        public PatchBlockModel getPatchModelRec(String blknm, int[] meta) {
+            if (this.modDef == null) {
+                this.modDef = this.txtDef.getModelDefinition();
+            }
+            PatchBlockModel mod = this.modDef.addPatchModel(blknm);
+            DynmapBlockScanPlugin.logger.info("Created patch model for " + blknm + Arrays.toString(meta));
             // Set matching metadata
             for (int metaval : meta) {
                 mod.setMetaValue(metaval);
@@ -477,22 +501,22 @@ public class DynmapBlockScanPlugin
     	}
     }
 
+    public boolean isSimpleCuboid(List<BlockElement> elements) {
+        for (BlockElement be : elements) {
+            if (be.isSimpleCuboid() == false) {
+                return false;
+            }
+        }
+        return true;
+    }
 
-    public void registerSimpleDynmapCuboids(String blkname, StateRec state, List<BlockElement> elements, ModelRotation rot, boolean uvlock, WellKnownBlockClasses type) {
+    public void registerSimpleDynmapCuboids(String blkname, StateRec state, List<BlockElement> elems, ModelRotation rot, boolean uvlock, WellKnownBlockClasses type) {
         String[] tok = blkname.split(":");
         String modid = tok[0];
         String blknm = tok[1];
         int[] meta = state.metadata;
-        List<BlockElement> elems;
         if (tok[0].equals("minecraft")) {   // Skip vanilla
             return;
-        }
-        // Find elements we can handle
-        elems = new ArrayList<BlockElement>();
-        for (BlockElement be : elements) {
-            if (be.isSimpleCuboid()) {
-                elems.add(be);
-            }
         }
         // Get record for mod
         ModDynmapRec td = getModRec(modid);
@@ -589,6 +613,177 @@ public class DynmapBlockScanPlugin
             // Advance image count
             imgidx += imgcnt;
         }
+    }
+
+    public void registerDynmapPatches(String blkname, StateRec state, List<BlockElement> elems, ModelRotation rot, boolean uvlock, WellKnownBlockClasses type) {
+        String[] tok = blkname.split(":");
+        String modid = tok[0];
+        String blknm = tok[1];
+        int[] meta = state.metadata;
+        if (tok[0].equals("minecraft")) {   // Skip vanilla
+            return;
+        }
+        // Get record for mod
+        ModDynmapRec td = getModRec(modid);
+        // Create block texture record
+        BlockTextureRecord btr = td.getBlockTxtRec(blknm, meta);
+        if (btr == null) {
+            return;
+        }
+        // Check for tinting and/or culling
+        boolean tinting = false;   // Watch out for tinting
+        boolean culling = false;
+        for (BlockElement be : elems) {
+            for (BlockFace f : be.faces.values()) {
+                if (f.tintindex >= 0) {
+                    tinting = true;
+                    break;
+                }
+                if (f.cullface != null) {
+                    culling = true;
+                }
+            }
+        }
+        // Set to transparent (or semitransparent if culling)
+        if (culling) {
+            btr.setTransparencyMode(TransparencyMode.SEMITRANSPARENT);
+        }
+        else {
+            btr.setTransparencyMode(TransparencyMode.TRANSPARENT);
+        }
+        // If block has tinting, try to figure out what to use
+        if (tinting) {
+            String txtfile = null;
+            BlockTintOverride ovr = overrides.getTinting(modid, blknm, state.getProperties());
+            if (ovr == null) { // No match, need to guess
+                switch (type) {
+                case LEAVES:
+                case VINES:
+                    txtfile = "minecraft:colormap/foliage";
+                    break;
+                default:
+                    txtfile = "minecraft:colormap/grass";
+                    break;
+                }
+            }
+            else {
+                txtfile = ovr.colormap[0];
+            }
+            if (txtfile != null) {
+                TextureFile gtf = td.registerBiomeTexture(txtfile);
+                btr.setBlockColorMapTexture(gtf);
+            }
+        }
+        // Get patch model
+        PatchBlockModel mod = td.getPatchModelRec(blknm, meta);
+        // Loop over elements
+        int patchidx = 0;
+        for (BlockElement be : elems) {
+            // Loop over the images for the element
+            for (Entry<EnumFacing, BlockFace> face : be.faces.entrySet()) {
+                EnumFacing facing = face.getKey();
+                BlockFace f = face.getValue();
+                BlockSide bs = faceToSide.get(facing);
+                if ((bs != null) && (f.texture != null)) {
+                    TextureFile gtf = td.registerTexture(f.texture);
+                    // Handle Dynmap legacy top/bottom orientation issues
+                    int faceidx = ((facing.getAxis() == EnumFacing.Axis.Y)?270:0) + (360-f.rotation);
+                    if (!uvlock) {
+                        faceidx = faceidx + f.facerotation;
+                    }
+                    TextureModifier tm = TextureModifier.NONE;
+                    switch (faceidx % 360) {
+                    case 90:
+                        tm = TextureModifier.ROT90;
+                        break;
+                    case 180:
+                        tm = TextureModifier.ROT180;
+                        break;
+                    case 270:
+                        tm = TextureModifier.ROT270;
+                        break;
+                    }
+                    // And add patch to to model
+                    if (addPatch(mod, facing, be) != null) {
+                        btr.setPatchTexture(gtf, tm, patchidx);
+                        // Increment patch count
+                        patchidx++;
+                    }
+                    else {
+                        logger.info("Failed to add patch for " + blkname);
+                    }
+                }
+            }
+        }
+    }
+    
+    private String addPatch(PatchBlockModel mod, EnumFacing facing, BlockElement be) {
+        // First, do the rotation on the from/to
+        Vector3D fromvec = new Vector3D(be.from[0], be.from[1], be.from[2]);
+        Vector3D tovec = new Vector3D(be.to[0], be.to[1], be.to[2]);
+        if ((be.rotation != null) && (be.rotation.angle != 0)) {
+            Matrix3D rot = new Matrix3D();
+            if ("z".equals(be.rotation.axis)) {
+                rot.rotateXY(be.rotation.angle);
+            }
+            else if ("x".equals(be.rotation.axis)) {
+                rot.rotateYZ(be.rotation.angle);
+            }
+            else {
+                rot.rotateXZ(be.rotation.angle);
+            }
+            Vector3D axis;
+            if (be.rotation.origin != null) {
+                axis = new Vector3D(be.rotation.origin[0], be.rotation.origin[1], be.rotation.origin[2]);
+            }
+            else {
+                axis = new Vector3D(8, 8, 8);
+            }
+            // Now do rotation
+            fromvec.subtract(axis);
+            tovec.subtract(axis);
+            rot.transform(fromvec);
+            rot.transform(tovec);
+            //if (be.rotation.rescale) {
+            //    double sc = 1.0/Math.cos(Math.toRadians(be.rotation.angle));
+            //    fromvec.scale(sc);
+            //    tovec.scale(sc);
+            //}
+            fromvec.add(axis);
+            tovec.add(axis);
+        }
+        // Now unit scale
+        fromvec.scale(1.0/16.0);
+        tovec.scale(1.0/16.0);
+        double xmin = fromvec.x;
+        double ymin = fromvec.y;
+        double zmin = fromvec.z;
+        double xmax = tovec.x;
+        double ymax = tovec.y;
+        double zmax = tovec.z;
+        String patchid = null;
+        // Now, add patch, based on facing
+        switch (facing) {
+            case DOWN:
+                patchid = mod.addPatch(xmin, ymin, zmin, xmax, ymin, zmin, xmin, ymin, zmax, SideVisible.TOP);
+                break;
+            case UP:
+                patchid = mod.addPatch(xmin, ymax, zmax, xmax, ymax, zmax, xmin, ymax, zmin, SideVisible.TOP);
+                break;
+            case WEST:
+                patchid = mod.addPatch(xmin, ymin, zmin, xmin, ymin, zmax, xmin, ymax, zmin, SideVisible.TOP);
+                break;
+            case EAST:
+                patchid = mod.addPatch(xmax, ymin, zmax, xmax, ymin, zmin, xmax, ymax, zmax, SideVisible.TOP);
+                break;
+            case NORTH:
+                patchid = mod.addPatch(xmax, ymin, zmin, xmin, ymin, zmin, xmax, ymax, zmin, SideVisible.TOP);
+                break;
+            case SOUTH:
+                patchid = mod.addPatch(xmin, ymin, zmax, xmax, ymin, zmax, xmin, ymax, zmax, SideVisible.TOP);
+                break;
+        }
+        return patchid;
     }
 
     
