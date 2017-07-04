@@ -42,11 +42,14 @@ import org.dynmap.blockscan.statehandlers.StateContainer.StateRec;
 import org.dynmap.blockscan.statehandlers.StateContainer.WellKnownBlockClasses;
 import org.dynmap.modsupport.BlockSide;
 import org.dynmap.modsupport.BlockTextureRecord;
+import org.dynmap.modsupport.CuboidBlockModel;
 import org.dynmap.modsupport.GridTextureFile;
+import org.dynmap.modsupport.ModModelDefinition;
 import org.dynmap.modsupport.ModSupportAPI;
 import org.dynmap.modsupport.ModTextureDefinition;
 import org.dynmap.modsupport.TextureFile;
 import org.dynmap.modsupport.TextureModifier;
+import org.dynmap.modsupport.TransparencyMode;
 
 import com.google.common.base.Charsets;
 import com.google.common.collect.ImmutableMap;
@@ -286,11 +289,18 @@ public class DynmapBlockScanPlugin
         						logger.warning(va.toString() + ": failed to generate elements for " + blkname + "[" + var.getKey() + "]");
         					}
         					else {
+        					    // If single simple full cube
         						if ((va.elements.size() == 1) && (va.elements.get(0).isSimpleBlock())) {
         							if (br.handler != null) {
         								//logger.info(String.format("%s: %s is simple block with %s map",  blkname, var.getKey(), br.handler.getName()));
         								registerSimpleDynmapCubes(blkname, var.getKey(), va.elements.get(0), va.rotation, va.uvlock, br.sc.getBlockType());
         							}
+        						}
+        						else {    // Else, handle any simple cuboid elements (skip others for now...)
+                                    if (br.handler != null) {
+                                        //logger.info(String.format("%s: %s is simple block with %s map",  blkname, var.getKey(), br.handler.getName()));
+                                        registerSimpleDynmapCuboids(blkname, var.getKey(), va.elements, va.rotation, va.uvlock, br.sc.getBlockType());
+                                    }
         						}
         					}
         				}
@@ -307,10 +317,12 @@ public class DynmapBlockScanPlugin
     
     private static class ModDynmapRec {
     	ModTextureDefinition txtDef;
+    	ModModelDefinition modDef;
     	Map<String, TextureFile> textureIDsByPath = new HashMap<String, TextureFile>();
     	int nextTxtID = 1;
     	
     	public TextureFile registerTexture(String txtpath) {
+    	    txtpath = txtpath.toLowerCase();
     		TextureFile txtf = textureIDsByPath.get(txtpath);
     		if (txtf == null) {
     			String txtid = String.format("txt%04d", nextTxtID);
@@ -340,9 +352,55 @@ public class DynmapBlockScanPlugin
             }
             return txtf;
         }
+        // Create block texture record
+        public BlockTextureRecord getBlockTxtRec(String blknm, int[] meta) {
+            BlockTextureRecord btr = txtDef.addBlockTextureRecord(blknm);
+            if (btr == null) {
+                return null;
+            }
+            DynmapBlockScanPlugin.logger.info("Created block record for " + blknm + Arrays.toString(meta));
+            // Set matching metadata
+            for (int metaval : meta) {
+                btr.setMetaValue(metaval);
+            }
+            return btr;
+        }
+        // Crete cuboid model
+        public CuboidBlockModel getCuboidModelRec(String blknm, int[] meta) {
+            if (this.modDef == null) {
+                this.modDef = this.txtDef.getModelDefinition();
+            }
+            CuboidBlockModel mod = this.modDef.addCuboidModel(blknm);
+            DynmapBlockScanPlugin.logger.info("Created cuboid model for " + blknm + Arrays.toString(meta));
+            // Set matching metadata
+            for (int metaval : meta) {
+                mod.setMetaValue(metaval);
+            }
+            return mod;
+        }
     }
     private Map<String, ModDynmapRec> modTextureDef = new HashMap<String, ModDynmapRec>();
     
+    private ModDynmapRec getModRec(String modid) {
+        if (dynmap_api == null) {
+            dynmap_api = ModSupportAPI.getAPI();
+            if (dynmap_api == null) {
+                return null;
+            }
+        }
+        ModDynmapRec td = modTextureDef.get(modid);
+        if (td == null) {
+            td = new ModDynmapRec();
+            td.txtDef = dynmap_api.getModTextureDefinition(modid, null);
+            if (td.txtDef == null) {
+                return null;
+            }
+            modTextureDef.put(modid, td);
+            logger.info("Create dynmap mod record for " + modid);
+        }
+        return td;
+    }
+
         
     public void registerSimpleDynmapCubes(String blkname, StateRec state, BlockElement element, ModelRotation rot, boolean uvlock, WellKnownBlockClasses type) {
     	String[] tok = blkname.split(":");
@@ -352,31 +410,12 @@ public class DynmapBlockScanPlugin
     	if (tok[0].equals("minecraft")) {	// Skip vanilla
     		return;
     	}
-    	if (dynmap_api == null) {
-    		dynmap_api = ModSupportAPI.getAPI();
-        	if (dynmap_api == null) {
-        		return;
-        	}
-    	}
-    	ModDynmapRec td = modTextureDef.get(modid);
-    	if (td == null) {
-    		td = new ModDynmapRec();
-    		td.txtDef = dynmap_api.getModTextureDefinition(modid, null);
-    		if (td.txtDef == null) {
-    			return;
-    		}
-    		modTextureDef.put(modid, td);
-    		logger.info("Create dynmap mod record for " + modid);
-    	}
+    	// Get record for mod
+    	ModDynmapRec td = getModRec(modid);
     	// Create block texture record
-    	BlockTextureRecord btr = td.txtDef.addBlockTextureRecord(blknm);
+    	BlockTextureRecord btr = td.getBlockTxtRec(blknm, meta);
     	if (btr == null) {
     		return;
-    	}
-    	logger.info("Created block record for " + blkname + Arrays.toString(meta));
-    	// Set matching metadata
-    	for (int metaval : meta) {
-    		btr.setMetaValue(metaval);
     	}
     	boolean tinting = false;   // Watch out for tinting
         for (BlockFace f : element.faces.values()) {
@@ -437,13 +476,132 @@ public class DynmapBlockScanPlugin
     		}
     	}
     }
+
+
+    public void registerSimpleDynmapCuboids(String blkname, StateRec state, List<BlockElement> elements, ModelRotation rot, boolean uvlock, WellKnownBlockClasses type) {
+        String[] tok = blkname.split(":");
+        String modid = tok[0];
+        String blknm = tok[1];
+        int[] meta = state.metadata;
+        List<BlockElement> elems;
+        if (tok[0].equals("minecraft")) {   // Skip vanilla
+            return;
+        }
+        // Find elements we can handle
+        elems = new ArrayList<BlockElement>();
+        for (BlockElement be : elements) {
+            if (be.isSimpleCuboid()) {
+                elems.add(be);
+            }
+        }
+        // Get record for mod
+        ModDynmapRec td = getModRec(modid);
+        // Create block texture record
+        BlockTextureRecord btr = td.getBlockTxtRec(blknm, meta);
+        if (btr == null) {
+            return;
+        }
+        // Check for tinting and/or culling
+        boolean tinting = false;   // Watch out for tinting
+        boolean culling = false;
+        for (BlockElement be : elems) {
+            for (BlockFace f : be.faces.values()) {
+                if (f.tintindex >= 0) {
+                    tinting = true;
+                    break;
+                }
+                if (f.cullface != null) {
+                    culling = true;
+                }
+            }
+        }
+        // Set to transparent (or semitransparent if culling)
+        if (culling) {
+            btr.setTransparencyMode(TransparencyMode.SEMITRANSPARENT);
+        }
+        else {
+            btr.setTransparencyMode(TransparencyMode.TRANSPARENT);
+        }
+        // If block has tinting, try to figure out what to use
+        if (tinting) {
+            String txtfile = null;
+            BlockTintOverride ovr = overrides.getTinting(modid, blknm, state.getProperties());
+            if (ovr == null) { // No match, need to guess
+                switch (type) {
+                case LEAVES:
+                case VINES:
+                    txtfile = "minecraft:colormap/foliage";
+                    break;
+                default:
+                    txtfile = "minecraft:colormap/grass";
+                    break;
+                }
+            }
+            else {
+                txtfile = ovr.colormap[0];
+            }
+            if (txtfile != null) {
+                TextureFile gtf = td.registerBiomeTexture(txtfile);
+                btr.setBlockColorMapTexture(gtf);
+            }
+        }
+        // Get cuboid model
+        CuboidBlockModel mod = td.getCuboidModelRec(blknm, meta);
+        // Loop over elements
+        int imgidx = 0;
+        int[] cuboididx = new int[6];
+        for (BlockElement be : elems) {
+            int imgcnt = 0;
+            // Loop over the images for the element
+            for (Entry<EnumFacing, BlockFace> face : be.faces.entrySet()) {
+                EnumFacing facing = face.getKey();
+                BlockFace f = face.getValue();
+                BlockSide bs = faceToSide.get(facing);
+                if ((bs != null) && (f.texture != null)) {
+                    TextureFile gtf = td.registerTexture(f.texture);
+                    // Handle Dynmap legacy top/bottom orientation issues
+                    int faceidx = ((facing.getAxis() == EnumFacing.Axis.Y)?270:0) + (360-f.rotation);
+                    if (!uvlock) {
+                        faceidx = faceidx + f.facerotation;
+                    }
+                    TextureModifier tm = TextureModifier.NONE;
+                    switch (faceidx % 360) {
+                    case 90:
+                        tm = TextureModifier.ROT90;
+                        break;
+                    case 180:
+                        tm = TextureModifier.ROT180;
+                        break;
+                    case 270:
+                        tm = TextureModifier.ROT270;
+                        break;
+                    }
+                    cuboididx[facing.getIndex()] = imgidx + facing.getIndex();
+                    btr.setPatchTexture(gtf, tm, imgidx + facing.getIndex());
+                    imgcnt++;
+                }
+                else {
+                    cuboididx[facing.getIndex()] = -1; // No texture for this side
+                }
+            }
+            // Add cuboid element to model
+            mod.addCuboid(be.from[0]/16.0, be.from[1]/16.0, be.from[2]/16.0, be.to[0]/16.0, be.to[1]/16.0, be.to[2]/16.0, cuboididx);
+            // Advance image count
+            imgidx += imgcnt;
+        }
+    }
+
     
     public void publishDynmapModData() {
     	for (ModDynmapRec mod : modTextureDef.values()) {
     		if (mod.txtDef != null) {
     			mod.txtDef.publishDefinition();
-    			logger.info("Published " + mod.txtDef.getModID() + " to Dynmap");
+    			logger.info("Published " + mod.txtDef.getModID() + " textures to Dynmap");
     		}
+    		if (mod.modDef != null) {
+                mod.modDef.publishDefinition();
+                logger.info("Published " + mod.modDef.getModID() + " models to Dynmap");
+            }
     	}
     
     }

@@ -9,6 +9,7 @@ import java.util.Map.Entry;
 
 import org.dynmap.blockscan.DynmapBlockScanPlugin;
 import org.dynmap.blockscan.blockstate.ModelRotation;
+import org.dynmap.blockscan.util.Vector3D;
 
 import com.google.gson.JsonDeserializationContext;
 import com.google.gson.JsonDeserializer;
@@ -25,6 +26,8 @@ public class BlockElement {
     public ElementRotation rotation = null;
     public Map<EnumFacing, BlockFace> faces = Collections.emptyMap();
     public boolean shade = true;
+    
+    private static final Vector3D centervect = new Vector3D(8,8,8); // Center of rotation
     
     public BlockElement() {}
     
@@ -54,20 +57,44 @@ public class BlockElement {
     			faces.put(mrot.rotateFace(face.getKey()), new BlockFace(f, v, mrot.rotateFaceOrientation(face.getKey())));
     		}
     	}
+    	// Rotate from/to, based on model rotation
+    	Vector3D fromvec = new Vector3D(this.from[0], this.from[1], this.from[2]);
+        Vector3D tovec = new Vector3D(this.to[0], this.to[1], this.to[2]);
+        fromvec.subtract(centervect);   // Shift to center
+        tovec.subtract(centervect);
+        mrot.transformVector(fromvec);  // Apply rotation transform
+        mrot.transformVector(tovec);
+        fromvec.add(centervect);   // Shift back 
+        tovec.add(centervect);
+        from[0] = (float) Math.min(fromvec.x, tovec.x);
+        from[1] = (float) Math.min(fromvec.y, tovec.y);
+        from[2] = (float) Math.min(fromvec.z, tovec.z);
+        to[0] = (float) Math.max(fromvec.x, tovec.x);
+        to[1] = (float) Math.max(fromvec.y, tovec.y);
+        to[2] = (float) Math.max(fromvec.z, tovec.z);
+    }
+    
+    // Test if element is simple cuboid (grid aligned)
+    public boolean isSimpleCuboid() {
+        // If rotation is zero
+        if ((rotation != null) && (rotation.angle != 0.0)) {
+            return false;
+        }
+        return true;
     }
     
     // Test if element is simple, full block
     public boolean isSimpleBlock() {
+        // Must be simple cuboid
+        if (!isSimpleCuboid()) {
+            return false;
+        }
     	// Check from corner
     	if ((from == null) || (from.length < 3) || (from[0] != 0.0F) || (from[1] != 0.0F) || (from[2] != 0.0F)) {
     		return false;
     	}
     	// Check to corner
     	if ((to == null) || (to.length < 3) || (to[0] != 16.0F) || (to[1] != 16.0F) || (to[2] != 16.0F)) {
-    		return false;
-    	}
-    	// If rotation is zero
-    	if ((rotation != null) && (rotation.angle != 0.0)) {
     		return false;
     	}
     	// Number of faces

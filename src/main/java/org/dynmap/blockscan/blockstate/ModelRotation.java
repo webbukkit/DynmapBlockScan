@@ -2,6 +2,10 @@ package org.dynmap.blockscan.blockstate;
 
 import com.google.common.collect.Maps;
 import java.util.Map;
+
+import org.dynmap.blockscan.util.Matrix3D;
+import org.dynmap.blockscan.util.Vector3D;
+
 import net.minecraft.util.EnumFacing;
 
 public enum ModelRotation {
@@ -28,6 +32,7 @@ public enum ModelRotation {
     private final int quartersY;
     private EnumFacing facemap[];	// resulting face after this rotation, indexed by ordinal of initial EnumFace
     private int facerot[];	// Number of CW quarter rotations for face due to rotation
+    private Matrix3D transform;
     
     private static int combineXY(int p_177521_0_, int p_177521_1_) {
         return p_177521_0_ * 360 + p_177521_1_;
@@ -61,6 +66,14 @@ public enum ModelRotation {
         }
         facemap = newface;
         facerot = newrot;
+        // And produce transform matrix
+        transform = new Matrix3D();    // Start with identity
+        if (quartersX != 0) {   // If doing X rotation
+            transform.rotateYZ(90.0 * quartersX);
+        }
+        if (quartersY != 0) {   // If doing Y rotation
+            transform.rotateXZ(90.0 * quartersY);
+        }
     }
     
     private void transferFace(EnumFacing src, EnumFacing dest, int rotation, EnumFacing[] newface, int[] newrot) {
@@ -105,7 +118,12 @@ public enum ModelRotation {
     public int rotateFaceOrientation(EnumFacing facing) {
     	return 90 * facerot[facing.getIndex()];
     }
-
+    
+    // Apply rotation transform to vector 'in place'
+    public void transformVector(Vector3D v) {
+        transform.transform(v);
+    }
+    
     public static ModelRotation getModelRotation(int x, int y) {
         return (ModelRotation)MAP_ROTATIONS.get(Integer.valueOf(combineXY(normalizeAngle(x, 360), normalizeAngle(y, 360))));
     }

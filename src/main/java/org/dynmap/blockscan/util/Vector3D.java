@@ -1,5 +1,4 @@
 package org.dynmap.blockscan.util;
-import org.dynmap.DynmapLocation;
 
 /**
  * Simple vector class
@@ -16,8 +15,6 @@ public class Vector3D {
         this.x = v.x; this.y = v.y; this.z = v.z;
     }
     
-    public final void setFromLocation(DynmapLocation l) { x = l.x; y = l.y; z = l.z; }
-
     public final void set(Vector3D v) {
         x = v.x; y = v.y; z = v.z;
     }

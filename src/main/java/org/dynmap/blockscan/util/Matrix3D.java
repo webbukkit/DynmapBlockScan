@@ -60,6 +60,17 @@ public class Matrix3D {
         multiply(scalemat);
     }
     /**
+     * Rotate XZ clockwise around +Y axis
+     * @param rot_deg - degrees of rotation
+     */
+    public void rotateXZ(double rot_deg) {
+        double rot_rad = Math.toRadians(rot_deg);
+        double sin_rot = Math.sin(rot_rad);
+        double cos_rot = Math.cos(rot_rad);
+        Matrix3D rotmat = new Matrix3D(cos_rot, 0, -sin_rot, 0, 1, 0, sin_rot, 0, cos_rot);
+        multiply(rotmat);
+    }
+    /**
      * Rotate XY clockwise around +Z axis
      * @param rot_deg - degrees of rotation
      */
