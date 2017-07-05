@@ -721,6 +721,42 @@ public class DynmapBlockScanPlugin
         // First, do the rotation on the from/to
         Vector3D fromvec = new Vector3D(be.from[0], be.from[1], be.from[2]);
         Vector3D tovec = new Vector3D(be.to[0], be.to[1], be.to[2]);
+        Vector3D originvec = new Vector3D();
+        Vector3D uvec = new Vector3D();
+        Vector3D vvec = new Vector3D();
+        // Now, compute corner vectors, based on which side
+        switch (facing) {
+            case DOWN:
+                originvec.x = fromvec.x; originvec.y = fromvec.y; originvec.z = fromvec.z;
+                uvec.x = tovec.x; uvec.y = fromvec.y; uvec.z = fromvec.z;
+                vvec.x = fromvec.x; vvec.y = fromvec.y; vvec.z = tovec.z;
+                break;
+            case UP:
+                originvec.x = fromvec.x; originvec.y = tovec.y; originvec.z = tovec.z;
+                uvec.x = tovec.x; uvec.y = tovec.y; uvec.z = tovec.z;
+                vvec.x = fromvec.x; vvec.y = tovec.y; vvec.z = fromvec.z;
+                break;
+            case WEST:
+                originvec.x = fromvec.x; originvec.y = fromvec.y; originvec.z = fromvec.z;
+                uvec.x = fromvec.x; uvec.y = fromvec.y; uvec.z = tovec.z;
+                vvec.x = fromvec.x; vvec.y = tovec.y; vvec.z = fromvec.z;
+                break;
+            case EAST:
+                originvec.x = tovec.x; originvec.y = fromvec.y; originvec.z = tovec.z;
+                uvec.x = tovec.x; uvec.y = fromvec.y; uvec.z = fromvec.z;
+                vvec.x = tovec.x; vvec.y = tovec.y; vvec.z = tovec.z;
+                break;
+            case NORTH:
+                originvec.x = tovec.x; originvec.y = fromvec.y; originvec.z = fromvec.z;
+                uvec.x = fromvec.x; uvec.y = fromvec.y; uvec.z = fromvec.z;
+                vvec.x = tovec.x; vvec.y = tovec.y; vvec.z = fromvec.z;
+                break;
+            case SOUTH:
+                originvec.x = fromvec.x; originvec.y = fromvec.y; originvec.z = tovec.z;
+                uvec.x = tovec.x; uvec.y = fromvec.y; uvec.z = tovec.z;
+                vvec.x = fromvec.x; vvec.y = tovec.y; vvec.z = tovec.z;
+                break;
+        }
         if ((be.rotation != null) && (be.rotation.angle != 0)) {
             Matrix3D rot = new Matrix3D();
             Vector3D scale = new Vector3D(1, 1, 1);
@@ -748,49 +784,28 @@ public class DynmapBlockScanPlugin
                 axis = new Vector3D(8, 8, 8);
             }
             // Now do rotation
-            fromvec.subtract(axis);
-            tovec.subtract(axis);
-            rot.transform(fromvec);
-            rot.transform(tovec);
+            originvec.subtract(axis);
+            uvec.subtract(axis);
+            vvec.subtract(axis);
+            rot.transform(originvec);
+            rot.transform(uvec);
+            rot.transform(vvec);
             if (be.rotation.rescale) {
-                fromvec.scale(scale);
-                tovec.scale(scale);
+                originvec.scale(scale);
+                uvec.scale(scale);
+                vvec.scale(scale);
             }
-            fromvec.add(axis);
-            tovec.add(axis);
+            originvec.add(axis);
+            uvec.add(axis);
+            vvec.add(axis);
         }
         // Now unit scale
-        fromvec.scale(1.0/16.0);
-        tovec.scale(1.0/16.0);
-        double xmin = fromvec.x;
-        double ymin = fromvec.y;
-        double zmin = fromvec.z;
-        double xmax = tovec.x;
-        double ymax = tovec.y;
-        double zmax = tovec.z;
-        String patchid = null;
+        originvec.scale(1.0/16.0);
+        uvec.scale(1.0/16.0);
+        vvec.scale(1.0/16.0);
+
         // Now, add patch, based on facing
-        switch (facing) {
-            case DOWN:
-                patchid = mod.addPatch(xmin, ymin, zmin, xmax, ymin, zmin, xmin, ymin, zmax, SideVisible.TOP);
-                break;
-            case UP:
-                patchid = mod.addPatch(xmin, ymax, zmax, xmax, ymax, zmax, xmin, ymax, zmin, SideVisible.TOP);
-                break;
-            case WEST:
-                patchid = mod.addPatch(xmin, ymin, zmin, xmin, ymin, zmax, xmin, ymax, zmin, SideVisible.TOP);
-                break;
-            case EAST:
-                patchid = mod.addPatch(xmax, ymin, zmax, xmax, ymin, zmin, xmax, ymax, zmax, SideVisible.TOP);
-                break;
-            case NORTH:
-                patchid = mod.addPatch(xmax, ymin, zmin, xmin, ymin, zmin, xmax, ymax, zmin, SideVisible.TOP);
-                break;
-            case SOUTH:
-                patchid = mod.addPatch(xmin, ymin, zmax, xmax, ymin, zmax, xmin, ymax, zmax, SideVisible.TOP);
-                break;
-        }
-        return patchid;
+        return mod.addPatch(originvec.x, originvec.y, originvec.z, uvec.x, uvec.y, uvec.z, vvec.x, vvec.y, vvec.z, SideVisible.TOP);
     }
 
     
