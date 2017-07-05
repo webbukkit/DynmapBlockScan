@@ -1,17 +1,11 @@
 package org.dynmap.blockscan;
 
 import java.lang.reflect.Type;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Map;
-import java.util.Map.Entry;
 
-import org.dynmap.blockscan.blockstate.ANDCondition;
 import org.dynmap.blockscan.blockstate.BaseCondition;
-import org.dynmap.blockscan.blockstate.Condition;
-import org.dynmap.blockscan.blockstate.ORCondition;
 
-import com.google.common.collect.ImmutableMap;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonDeserializationContext;
 import com.google.gson.JsonDeserializer;

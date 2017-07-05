@@ -3,9 +3,6 @@ package org.dynmap.blockscan.blockstate;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
-
-import org.dynmap.blockscan.model.BlockModel;
 
 import com.google.common.collect.Lists;
 import com.google.gson.JsonArray;

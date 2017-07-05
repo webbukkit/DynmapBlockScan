@@ -4,8 +4,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.Map.Entry;
 
-import org.dynmap.blockscan.DynmapBlockScanPlugin;
-
 import com.google.common.collect.ImmutableMap;
 
 public class BaseCondition implements Condition {

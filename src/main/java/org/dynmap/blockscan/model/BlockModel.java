@@ -88,7 +88,6 @@ public class BlockModel implements TextureReferences {
 	 */
 	@Override
 	public String findTextureByID(String txtid) {
-		String basetxtid = txtid;
 		while(txtid.startsWith("#")) {
 			BlockModel mod = this;
 			boolean match = false;
