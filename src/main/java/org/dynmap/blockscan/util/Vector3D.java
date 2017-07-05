@@ -31,6 +31,10 @@ public class Vector3D {
         x = s*x; y = s*y; z = s*z;
     }
 
+    public final void scale(Vector3D v) {
+        x = v.x * x; y = v.y * y; z = v.z * z;
+    }
+
     public final double innerProduct(Vector3D v) {
         return (v.x * x) + (v.y * y) + (v.z * z);
     }

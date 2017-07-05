@@ -723,14 +723,22 @@ public class DynmapBlockScanPlugin
         Vector3D tovec = new Vector3D(be.to[0], be.to[1], be.to[2]);
         if ((be.rotation != null) && (be.rotation.angle != 0)) {
             Matrix3D rot = new Matrix3D();
+            Vector3D scale = new Vector3D(1, 1, 1);
+            double rescale = (1.0 / Math.cos(Math.toRadians(be.rotation.angle))) - 1.0;
             if ("z".equals(be.rotation.axis)) {
                 rot.rotateXY(be.rotation.angle);
+                scale.x += rescale;
+                scale.y += rescale;
             }
             else if ("x".equals(be.rotation.axis)) {
                 rot.rotateYZ(be.rotation.angle);
+                scale.y += rescale;
+                scale.z += rescale;
             }
             else {
                 rot.rotateXZ(be.rotation.angle);
+                scale.x += rescale;
+                scale.z += rescale;
             }
             Vector3D axis;
             if (be.rotation.origin != null) {
@@ -744,11 +752,10 @@ public class DynmapBlockScanPlugin
             tovec.subtract(axis);
             rot.transform(fromvec);
             rot.transform(tovec);
-            //if (be.rotation.rescale) {
-            //    double sc = 1.0/Math.cos(Math.toRadians(be.rotation.angle));
-            //    fromvec.scale(sc);
-            //    tovec.scale(sc);
-            //}
+            if (be.rotation.rescale) {
+                fromvec.scale(scale);
+                tovec.scale(scale);
+            }
             fromvec.add(axis);
             tovec.add(axis);
         }
