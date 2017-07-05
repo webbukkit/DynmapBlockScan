@@ -59,14 +59,41 @@ public class Matrix3D {
         Matrix3D scalemat = new Matrix3D(s1, 0, 0, 0, s2, 0, 0, 0, s3);
         multiply(scalemat);
     }
+    private double getSin(double rot_deg) {
+        if ((rot_deg == 0.0) || (rot_deg == 180.0)) {
+            return 0.0;
+        }
+        else if (rot_deg == 90.0) {
+            return 1.0;
+        }
+        else if (rot_deg == 270.0) {
+            return -1.0;
+        }
+        else {
+            return Math.sin(Math.toRadians(rot_deg));
+        }
+    }
+    private double getCos(double rot_deg) {
+        if ((rot_deg == 90.0) || (rot_deg == 270.0)) {
+            return 0.0;
+        }
+        else if (rot_deg == 0.0) {
+            return 1.0;
+        }
+        else if (rot_deg == 180.0) {
+            return -1.0;
+        }
+        else {
+            return Math.cos(Math.toRadians(rot_deg));
+        }
+    }
     /**
      * Rotate XZ clockwise around +Y axis
      * @param rot_deg - degrees of rotation
      */
     public void rotateXZ(double rot_deg) {
-        double rot_rad = Math.toRadians(rot_deg);
-        double sin_rot = Math.sin(rot_rad);
-        double cos_rot = Math.cos(rot_rad);
+        double sin_rot = getSin(rot_deg);
+        double cos_rot = getCos(rot_deg);
         Matrix3D rotmat = new Matrix3D(cos_rot, 0, -sin_rot, 0, 1, 0, sin_rot, 0, cos_rot);
         multiply(rotmat);
     }
@@ -75,9 +102,8 @@ public class Matrix3D {
      * @param rot_deg - degrees of rotation
      */
     public void rotateXY(double rot_deg) {
-        double rot_rad = Math.toRadians(rot_deg);
-        double sin_rot = Math.sin(rot_rad);
-        double cos_rot = Math.cos(rot_rad);
+        double sin_rot = getSin(rot_deg);
+        double cos_rot = getCos(rot_deg);
         Matrix3D rotmat = new Matrix3D(cos_rot, sin_rot, 0, -sin_rot, cos_rot, 0, 0, 0, 1);
         multiply(rotmat);
     }
@@ -86,9 +112,8 @@ public class Matrix3D {
      * @param rot_deg - degrees of rotation
      */
     public void rotateYZ(double rot_deg) {
-        double rot_rad = Math.toRadians(rot_deg);
-        double sin_rot = Math.sin(rot_rad);
-        double cos_rot = Math.cos(rot_rad);
+        double sin_rot = getSin(rot_deg);
+        double cos_rot = getCos(rot_deg);
         Matrix3D rotmat = new Matrix3D(1, 0, 0, 0, cos_rot, sin_rot, 0, -sin_rot, cos_rot);
         multiply(rotmat);
     }
