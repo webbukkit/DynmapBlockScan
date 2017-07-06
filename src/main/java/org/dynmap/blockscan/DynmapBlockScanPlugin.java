@@ -473,8 +473,7 @@ public class DynmapBlockScanPlugin
     		BlockSide bs = faceToSide.get(facing);
     		if ((bs != null) && (f.texture != null)) {
     			TextureFile gtf = td.registerTexture(f.texture);
-				// Handle Dynmap legacy top/bottom orientation issues
-				int faceidx = ((facing.getAxis() == EnumFacing.Axis.Y)?270:0) + (360-f.rotation);
+				int faceidx = (360-f.rotation);
 				if (!uvlock) {
 				    faceidx = faceidx + f.facerotation;
 				}
