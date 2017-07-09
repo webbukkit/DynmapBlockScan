@@ -281,35 +281,39 @@ public class DynmapBlockScanPlugin
         	BlockRecord br = blockRecords.get(blkname);
         	if (br.sc != null) {
         		for (Entry<StateRec, List<VariantList>> var : br.varList.entrySet()) {
-        			for (VariantList vl : var.getValue()) {
-        				for (Variant va : vl.variantList) {
-        					if(va.generateElements(models) == false) {
-        						logger.warning(va.toString() + ": failed to generate elements for " + blkname + "[" + var.getKey() + "]");
-        					}
-        					else {
-        					    // If single simple full cube
-        						if ((va.elements.size() == 1) && (va.elements.get(0).isSimpleBlock())) {
-        							if (br.handler != null) {
-        								//logger.info(String.format("%s: %s is simple block with %s map",  blkname, var.getKey(), br.handler.getName()));
-        								registerSimpleDynmapCubes(blkname, var.getKey(), va.elements.get(0), va.rotation, va.uvlock, br.sc.getBlockType());
-        							}
-        						}
-        						// Else if simple cuboid
-        						else if (isSimpleCuboid(va.elements)) {
-                                    if (br.handler != null) {
-                                        //logger.info(String.format("%s: %s is simple block with %s map",  blkname, var.getKey(), br.handler.getName()));
-                                        registerSimpleDynmapCuboids(blkname, var.getKey(), va.elements, va.rotation, va.uvlock, br.sc.getBlockType());
-                                    }
-        						}
-                                else  {
-                                    if (br.handler != null) {
-                                        //logger.info(String.format("%s: %s is simple block with %s map",  blkname, var.getKey(), br.handler.getName()));
-                                        registerDynmapPatches(blkname, var.getKey(), va.elements, va.rotation, va.uvlock, br.sc.getBlockType());
-                                    }
-                                }
-        					}
-        				}
-        			}
+        		    // Produce merged element lists : for now, ignore random weights and just use first element of each section
+        		    List<BlockElement> elems = new ArrayList<BlockElement>();
+                    for (VariantList vl : var.getValue()) {
+                        if (vl.variantList.size() > 0) {
+                            Variant va = vl.variantList.get(0);
+                            if(va.generateElements(models) == false) {
+                                logger.warning(va.toString() + ": failed to generate elements for " + blkname + "[" + var.getKey() + "]");
+                            }
+                            else {
+                                elems.addAll(va.elements);
+                            }
+                        }
+                    }
+                    // If single simple full cube
+                    if ((elems.size() == 1) && (elems.get(0).isSimpleBlock())) {
+                        if (br.handler != null) {
+                            //logger.info(String.format("%s: %s is simple block with %s map",  blkname, var.getKey(), br.handler.getName()));
+                            registerSimpleDynmapCubes(blkname, var.getKey(), elems.get(0), br.sc.getBlockType());
+                        }
+                    }
+                    // Else if simple cuboid
+                    else if (isSimpleCuboid(elems)) {
+                        if (br.handler != null) {
+                            //logger.info(String.format("%s: %s is simple block with %s map",  blkname, var.getKey(), br.handler.getName()));
+                            registerSimpleDynmapCuboids(blkname, var.getKey(), elems, br.sc.getBlockType());
+                        }
+                    }
+                    else  {
+                        if (br.handler != null) {
+                            //logger.info(String.format("%s: %s is simple block with %s map",  blkname, var.getKey(), br.handler.getName()));
+                            registerDynmapPatches(blkname, var.getKey(), elems, br.sc.getBlockType());
+                        }
+                    }
         		}
         	}
         }
@@ -420,7 +424,7 @@ public class DynmapBlockScanPlugin
     }
 
         
-    public void registerSimpleDynmapCubes(String blkname, StateRec state, BlockElement element, ModelRotation rot, boolean uvlock, WellKnownBlockClasses type) {
+    public void registerSimpleDynmapCubes(String blkname, StateRec state, BlockElement element, WellKnownBlockClasses type) {
     	String[] tok = blkname.split(":");
     	String modid = tok[0];
     	String blknm = tok[1];
@@ -474,7 +478,7 @@ public class DynmapBlockScanPlugin
     		if ((bs != null) && (f.texture != null)) {
     			TextureFile gtf = td.registerTexture(f.texture);
 				int faceidx = (360-f.rotation);
-				if (!uvlock) {
+				if (!element.uvlock) {
 				    faceidx = faceidx + f.facerotation;
 				}
                 TextureModifier tm = TextureModifier.NONE;
@@ -503,7 +507,7 @@ public class DynmapBlockScanPlugin
         return true;
     }
 
-    public void registerSimpleDynmapCuboids(String blkname, StateRec state, List<BlockElement> elems, ModelRotation rot, boolean uvlock, WellKnownBlockClasses type) {
+    public void registerSimpleDynmapCuboids(String blkname, StateRec state, List<BlockElement> elems, WellKnownBlockClasses type) {
         String[] tok = blkname.split(":");
         String modid = tok[0];
         String blknm = tok[1];
@@ -568,16 +572,16 @@ public class DynmapBlockScanPlugin
         int imgidx = 0;
         int[] cuboididx = new int[6];
         for (BlockElement be : elems) {
-            int imgcnt = 0;
+            // Initialize to no texture for each side
+            for (int v = 0; v < cuboididx.length; v++) cuboididx[v] = -1;
             // Loop over the images for the element
             for (Entry<EnumFacing, BlockFace> face : be.faces.entrySet()) {
                 EnumFacing facing = face.getKey();
                 BlockFace f = face.getValue();
-                BlockSide bs = faceToSide.get(facing);
-                if ((bs != null) && (f.texture != null)) {
+                if (f.texture != null) {
                     TextureFile gtf = td.registerTexture(f.texture);
                     int faceidx = (360-f.rotation);
-                    if (!uvlock) {
+                    if (!be.uvlock) {
                         faceidx = faceidx + f.facerotation;
                     }
                     TextureModifier tm = TextureModifier.NONE;
@@ -592,22 +596,17 @@ public class DynmapBlockScanPlugin
                         tm = TextureModifier.ROT270;
                         break;
                     }
-                    cuboididx[facing.getIndex()] = imgidx + facing.getIndex();
-                    btr.setPatchTexture(gtf, tm, imgidx + facing.getIndex());
-                    imgcnt++;
-                }
-                else {
-                    cuboididx[facing.getIndex()] = -1; // No texture for this side
+                    cuboididx[facing.getIndex()] = imgidx;
+                    btr.setPatchTexture(gtf, tm, imgidx);
+                    imgidx++;
                 }
             }
             // Add cuboid element to model
             mod.addCuboid(be.from[0]/16.0, be.from[1]/16.0, be.from[2]/16.0, be.to[0]/16.0, be.to[1]/16.0, be.to[2]/16.0, cuboididx);
-            // Advance image count
-            imgidx += imgcnt;
         }
     }
 
-    public void registerDynmapPatches(String blkname, StateRec state, List<BlockElement> elems, ModelRotation rot, boolean uvlock, WellKnownBlockClasses type) {
+    public void registerDynmapPatches(String blkname, StateRec state, List<BlockElement> elems, WellKnownBlockClasses type) {
         String[] tok = blkname.split(":");
         String modid = tok[0];
         String blknm = tok[1];
@@ -679,7 +678,7 @@ public class DynmapBlockScanPlugin
                 if ((bs != null) && (f.texture != null)) {
                     TextureFile gtf = td.registerTexture(f.texture);
                     int faceidx = (360-f.rotation);
-                    if (!uvlock) {
+                    if (!be.uvlock) {
                         faceidx = faceidx + f.facerotation;
                     }
                     TextureModifier tm = TextureModifier.NONE;

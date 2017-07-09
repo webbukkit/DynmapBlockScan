@@ -27,6 +27,8 @@ public class BlockElement {
     public Map<EnumFacing, BlockFace> faces = Collections.emptyMap();
     public boolean shade = true;
     
+    public boolean uvlock = false;
+    
     private static final Vector3D centervect = new Vector3D(8,8,8); // Center of rotation
     
     public BlockElement() {}
@@ -72,6 +74,8 @@ public class BlockElement {
         to[0] = (float) Math.max(fromvec.x, tovec.x);
         to[1] = (float) Math.max(fromvec.y, tovec.y);
         to[2] = (float) Math.max(fromvec.z, tovec.z);
+        
+        this.uvlock = uvlock;   // Remember uvlock
     }
     
     // Test if element is simple cuboid (grid aligned)
