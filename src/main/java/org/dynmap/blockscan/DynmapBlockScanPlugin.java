@@ -393,7 +393,7 @@ public class DynmapBlockScanPlugin
             if (btr == null) {
                 return null;
             }
-            DynmapBlockScanPlugin.logger.info("Created block record for " + blknm + Arrays.toString(meta));
+            DynmapBlockScanPlugin.logger.debug("Created block record for " + blknm + Arrays.toString(meta));
             // Set matching metadata
             for (int metaval : meta) {
                 btr.setMetaValue(metaval);
@@ -406,7 +406,7 @@ public class DynmapBlockScanPlugin
                 this.modDef = this.txtDef.getModelDefinition();
             }
             CuboidBlockModel mod = this.modDef.addCuboidModel(blknm);
-            DynmapBlockScanPlugin.logger.info("Created cuboid model for " + blknm + Arrays.toString(meta));
+            DynmapBlockScanPlugin.logger.debug("Created cuboid model for " + blknm + Arrays.toString(meta));
             // Set matching metadata
             for (int metaval : meta) {
                 mod.setMetaValue(metaval);
@@ -419,7 +419,7 @@ public class DynmapBlockScanPlugin
                 this.modDef = this.txtDef.getModelDefinition();
             }
             PatchBlockModel mod = this.modDef.addPatchModel(blknm);
-            DynmapBlockScanPlugin.logger.info("Created patch model for " + blknm + Arrays.toString(meta));
+            DynmapBlockScanPlugin.logger.debug("Created patch model for " + blknm + Arrays.toString(meta));
             // Set matching metadata
             for (int metaval : meta) {
                 mod.setMetaValue(metaval);
@@ -444,7 +444,7 @@ public class DynmapBlockScanPlugin
                 return null;
             }
             modTextureDef.put(modid, td);
-            logger.info("Create dynmap mod record for " + modid);
+            logger.debug("Create dynmap mod record for " + modid);
         }
         return td;
     }
@@ -991,6 +991,9 @@ public class DynmapBlockScanPlugin
         public static final String DM = "[DynmapBlockScan] ";
         OurLog() {
             log = LogManager.getLogger("DynmapBlockScan");
+        }
+        public void debug(String s) {
+            log.debug(DM + s);
         }
         public void info(String s) {
             log.info(DM + s);
