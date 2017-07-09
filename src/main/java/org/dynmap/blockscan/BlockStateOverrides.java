@@ -2,7 +2,9 @@ package org.dynmap.blockscan;
 
 import java.lang.reflect.Type;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.Map;
+import java.util.Map.Entry;
 
 import org.dynmap.blockscan.blockstate.BaseCondition;
 
@@ -69,6 +71,31 @@ public class BlockStateOverrides {
             }
         }
         return null;
+    }
+    
+    public void merge(BlockStateOverrides ovr) {
+        // Merge in block state overrides
+        for (Entry<String, Map<String, BlockStateOverride>> mod : ovr.overrides.entrySet()) {
+            String modid = mod.getKey();
+            if (overrides.containsKey(modid) == false) {
+                overrides.put(modid, new HashMap<String, BlockStateOverride>());
+            }
+            Map<String, BlockStateOverride> bso = overrides.get(modid);
+            for (Entry<String, BlockStateOverride> blk : mod.getValue().entrySet()) {
+                bso.put(blk.getKey(), blk.getValue());
+            }
+        }
+        // Merge in tinting overrides
+        for (Entry<String, Map<String, BlockTintOverride[]>> mod : ovr.tinting.entrySet()) {
+            String modid = mod.getKey();
+            if (tinting.containsKey(modid) == false) {
+                tinting.put(modid, new HashMap<String, BlockTintOverride[]>());
+            }
+            Map<String, BlockTintOverride[]> bto = tinting.get(modid);
+            for (Entry<String, BlockTintOverride[]> blk : mod.getValue().entrySet()) {
+                bto.put(blk.getKey(), blk.getValue());
+            }
+        }
     }
     
 }

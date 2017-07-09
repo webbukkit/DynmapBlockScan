@@ -54,6 +54,8 @@ import com.google.common.base.Charsets;
 import com.google.common.collect.ImmutableMap;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.google.gson.JsonIOException;
+import com.google.gson.JsonSyntaxException;
 
 import jline.internal.Log;
 
@@ -130,7 +132,7 @@ public class DynmapBlockScanPlugin
         logger.info("serverStarting()");
         
         // Load override resources
-        InputStream override_str = openResource("dynmapblockscan", "blockStateOverrides.json");
+        InputStream override_str = openResource("dynmapblockscan", "blockstateoverrides.json");
         if (override_str != null) {
         	Reader rdr = new InputStreamReader(override_str, Charsets.UTF_8);
             GsonBuilder gb = new GsonBuilder(); // Start with builder
@@ -146,6 +148,30 @@ public class DynmapBlockScanPlugin
         	logger.info("Failed to load block overrides");
         	overrides = new BlockStateOverrides();
         }
+        // Scan other modules for block overrides
+        for (Entry<String, ModContainer> mod : Loader.instance().getIndexedModList().entrySet()) {
+            InputStream str = openResource(mod.getKey(), "assets/" + mod.getKey() + "/dynmap/blockstateoverrides.json");
+            if (str != null) {
+                Reader rdr = new InputStreamReader(str, Charsets.UTF_8);
+                GsonBuilder gb = new GsonBuilder(); // Start with builder
+                gb.registerTypeAdapter(BlockTintOverride.class, new BlockTintOverride.Deserializer()); // Add Condition handler1
+                Gson parse = gb.create();
+                try {
+                    BlockStateOverrides modoverrides = parse.fromJson(rdr, BlockStateOverrides.class);
+                    if (modoverrides != null) {
+                        overrides.merge(modoverrides);
+                        logger.info("Loaded dynmap overrides from " + mod.getKey());
+                    }
+                } catch (JsonIOException iox) {
+                    logger.severe("Error reading dynmap overrides from " + mod.getKey(), iox);
+                } catch (JsonSyntaxException sx) {
+                    logger.severe("Error parsing dynmap overrides from " + mod.getKey(), sx);
+                } finally {
+                    if (str != null) { try { str.close(); } catch (IOException iox) {} }
+                }
+            }
+        }
+
 
         Map<String, BlockRecord> blockRecords = new HashMap<String, BlockRecord>();
 
