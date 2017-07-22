@@ -56,6 +56,7 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonIOException;
 import com.google.gson.JsonSyntaxException;
+import com.google.gson.stream.JsonReader;
 import com.google.gson.stream.MalformedJsonException;
 
 import jline.internal.Log;
@@ -139,7 +140,9 @@ public class DynmapBlockScanPlugin
             GsonBuilder gb = new GsonBuilder(); // Start with builder
             gb.registerTypeAdapter(BlockTintOverride.class, new BlockTintOverride.Deserializer()); // Add Condition handler1
             Gson parse = gb.create();
-        	overrides = parse.fromJson(rdr, BlockStateOverrides.class);
+            JsonReader jrdr = new JsonReader(rdr);
+            jrdr.setLenient(true);
+        	overrides = parse.fromJson(jrdr, BlockStateOverrides.class);
         	try {
 				override_str.close();
 			} catch (IOException e) {
@@ -158,7 +161,9 @@ public class DynmapBlockScanPlugin
                 gb.registerTypeAdapter(BlockTintOverride.class, new BlockTintOverride.Deserializer()); // Add Condition handler1
                 Gson parse = gb.create();
                 try {
-                    BlockStateOverrides modoverrides = parse.fromJson(rdr, BlockStateOverrides.class);
+                    JsonReader jrdr = new JsonReader(rdr);
+                    jrdr.setLenient(true);
+                    BlockStateOverrides modoverrides = parse.fromJson(jrdr, BlockStateOverrides.class);
                     if (modoverrides != null) {
                         overrides.merge(modoverrides);
                         logger.info("Loaded dynmap overrides from " + mod.getKey());
@@ -947,7 +952,9 @@ public class DynmapBlockScanPlugin
         	Reader rdr = new InputStreamReader(is, Charsets.UTF_8);
         	Gson parse = BlockState.buildParser();	// Get parser
         	try {
-        	    bs = parse.fromJson(rdr, BlockState.class);
+                JsonReader jrdr = new JsonReader(rdr);
+                jrdr.setLenient(true);
+        	    bs = parse.fromJson(jrdr, BlockState.class);
         	} catch (JsonSyntaxException jsx) {
                 logger.warning(String.format("%s:%s : JSON syntax error in block state file", modid, path), jsx);
         	}
@@ -973,7 +980,9 @@ public class DynmapBlockScanPlugin
         	Reader rdr = new InputStreamReader(is, Charsets.UTF_8);
         	Gson parse = BlockModel.buildParser();	// Get parser
         	try {
-        	    bs = parse.fromJson(rdr, BlockModel.class);
+        	    JsonReader jrdr = new JsonReader(rdr);
+        	    jrdr.setLenient(true);
+        	    bs = parse.fromJson(jrdr, BlockModel.class);
         	} catch (JsonSyntaxException jsx) {
                 logger.warning(String.format("%s:%s : JSON syntax error in model file", modid, path), jsx);
         	}
