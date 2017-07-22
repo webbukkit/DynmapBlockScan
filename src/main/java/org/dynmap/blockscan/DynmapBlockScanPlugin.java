@@ -56,6 +56,7 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonIOException;
 import com.google.gson.JsonSyntaxException;
+import com.google.gson.stream.MalformedJsonException;
 
 import jline.internal.Log;
 
@@ -947,8 +948,8 @@ public class DynmapBlockScanPlugin
         	Gson parse = BlockState.buildParser();	// Get parser
         	try {
         	    bs = parse.fromJson(rdr, BlockState.class);
-        	} catch (Exception x) {
-        	    logger.severe("Error processing " + path, x);
+        	} catch (JsonSyntaxException jsx) {
+                logger.warning(String.format("%s:%s : JSON syntax error in block state file", modid, path), jsx);
         	}
         	try {
         	    is.close();
@@ -971,7 +972,11 @@ public class DynmapBlockScanPlugin
         if (is != null) {	// Found it?
         	Reader rdr = new InputStreamReader(is, Charsets.UTF_8);
         	Gson parse = BlockModel.buildParser();	// Get parser
-        	bs = parse.fromJson(rdr, BlockModel.class);
+        	try {
+        	    bs = parse.fromJson(rdr, BlockModel.class);
+        	} catch (JsonSyntaxException jsx) {
+                logger.warning(String.format("%s:%s : JSON syntax error in model file", modid, path), jsx);
+        	}
         	try {
 				is.close();
 			} catch (IOException e) {
