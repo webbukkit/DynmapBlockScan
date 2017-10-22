@@ -274,9 +274,7 @@ public class DynmapBlockScanPlugin
         						BlockModel mod = models.get(modid);	// See if we have it
         						if (mod == null) {
         							mod = loadBlockModelFile(tok[0], tok[1]);
-        							if (mod != null) {
-        								models.put(modid, mod);
-        							}
+    								models.put(modid, mod);
         						}
         						va.modelID = modid;	// save normalized ID
         					}
@@ -299,11 +297,8 @@ public class DynmapBlockScanPlugin
         		if (mod.parentModel == null) {
 					String[] tok = modid.split(":");
 					mod.parentModel = loadBlockModelFile(tok[0], tok[1]);
-					if (mod.parentModel != null) {
-						models.put(modid, mod.parentModel);
-						modelToResolve.push(mod.parentModel);
-						//logger.info("Loaded parent " + modid);
-					}
+					models.put(modid, mod.parentModel);
+					modelToResolve.push(mod.parentModel);
         		}
         	}
         }
@@ -992,10 +987,12 @@ public class DynmapBlockScanPlugin
 			}
         	if (bs == null) {
         		logger.info(String.format("%s:%s : Failed to load model!", modid, path));
+                bs = new BlockModel();    // Return empty model
         	}
         }
         else {
     		logger.info(String.format("%s:%s : Failed to open model", modid, path));
+    		bs = new BlockModel();    // Return empty model
         }
         return bs;
     }
