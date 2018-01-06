@@ -105,7 +105,8 @@ public class DynmapBlockScanPlugin
         new PistonMetadataStateHandler(),
         new SnowyMetadataStateHandler(),
         new BedMetadataStateHandler(),
-        new SimpleMetadataStateHandler()
+        new SimpleMetadataStateHandler(true),
+        new SimpleMetadataStateHandler(false)
     };
 
     public DynmapBlockScanPlugin(MinecraftServer srv)
@@ -231,10 +232,17 @@ public class DynmapBlockScanPlugin
         	// Build generic block state container for block
         	br.sc = new ForgeStateContainer(b, br.renderProps, propMap);
         	if (blockstate != null) {
+                BlockStateOverride ovr = overrides.getOverride(rl.getResourceDomain(), rl.getResourcePath());
             	br.varList = new HashMap<StateRec, List<VariantList>>();
         		// Loop through rendering states in state container
         		for (StateRec sr : br.sc.getValidStates()) {
-        			List<VariantList> vlist = blockstate.getMatchingVariants(sr.getProperties(), models);
+                    Map<String, String> prop = sr.getProperties();
+                    // If we've got key=value for block (multiple blocks in same state file)
+                    if ((ovr != null) && (ovr.blockStateKey != null) && (ovr.blockStateValue != null)) {
+                        prop = new HashMap<String, String>(prop);
+                        prop.put(ovr.blockStateKey, ovr.blockStateValue);
+                    }
+        			List<VariantList> vlist = blockstate.getMatchingVariants(prop, models);
         			br.varList.put(sr, vlist);
         		}
         	}
