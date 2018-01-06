@@ -14,6 +14,11 @@ import org.dynmap.blockscan.statehandlers.StateContainer.StateRec;
  * @author Mike Primm
  */
 public class SimpleMetadataStateHandler implements IStateHandlerFactory {
+    private boolean strict;
+    
+    public SimpleMetadataStateHandler(boolean isStrict) {
+        strict = isStrict;
+    }
     /**
      * This method is used to examining the StateContainer of a block to determine if the state mapper can handle the given block
      * @param bsc - StateContainer object
@@ -22,7 +27,7 @@ public class SimpleMetadataStateHandler implements IStateHandlerFactory {
     public IStateHandler canHandleBlockState(StateContainer bsc) {
         List<StateRec> state = bsc.getValidStates();
         // More states than metadata values - cannot handle this
-        if (state.size() > 16) {
+        if (strict && (state.size() > 16)) {
             return null;
         }
         StateRec[] metavalues = new StateRec[16];
@@ -30,7 +35,12 @@ public class SimpleMetadataStateHandler implements IStateHandlerFactory {
         	for (int meta : s.metadata) {
         		// If out of range, or duplicate, we cannot handle
         		if ((meta < 0) || (meta > 15) || (metavalues[meta] != null)) {
-        			return null;
+        		    if (strict) {
+        		        return null;
+        		    }
+        		    else {
+        		        continue;
+        		    }
         		}
         		metavalues[meta] = s;
         	}
@@ -68,7 +78,10 @@ public class SimpleMetadataStateHandler implements IStateHandlerFactory {
         }
         @Override
         public String getName() {
-            return "SimpleMetadataState";
+            if (strict)
+                return "SimpleMetadataState";
+            else
+                return "DefaultMetadataState";
         }
         @Override
         public int getBlockStateIndex(int blockid, int blockmeta) {
