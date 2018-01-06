@@ -24,6 +24,8 @@ public class BlockStateOverrides {
 		public String baseNameProperty = null;	// If property used for base name, this is property name
 		public String nameSuffix = "";			// If base name has suffix
 		public String blockStateName = null;	// If defined, this is name of block state resource
+		public String blockStateKey = null;  // If defined, condition for matching block state
+        public String blockStateValue = null;  // If defined, condition for matching block state
 	}
     public static class BlockTintOverride {
         public BaseCondition state;    // Condition for matching block state (null=all states)
