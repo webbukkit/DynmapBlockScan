@@ -169,7 +169,7 @@ public class BlockState {
                         else {
                             JsonObject vobj = e.getValue().getAsJsonObject();
                             // If first element is an object (versus a value)
-                            if(vobj.entrySet().iterator().next().getValue().isJsonObject()) {
+                            if(vobj.entrySet().iterator().hasNext() && vobj.entrySet().iterator().next().getValue().isJsonObject()) {
                                 // Assume all subelements are values for key=value test
                                 for (Entry<String, JsonElement> se : vobj.entrySet()) {
                                     bs.forge_variants.put(new BaseCondition(e.getKey() + "=" + se.getKey()), context.deserialize(se.getValue(), ForgeVariantV1List.class));
