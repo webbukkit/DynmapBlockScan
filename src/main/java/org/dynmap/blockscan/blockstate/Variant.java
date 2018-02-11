@@ -108,7 +108,10 @@ public class Variant {
     		Variant var = new Variant();
     		JsonObject obj = element.getAsJsonObject();
     		
-    		var.model = obj.get("model").getAsString();
+    		if (obj.has("model"))
+    		    var.model = obj.get("model").getAsString();
+    		else
+    		    var.model = "cube";   // Default?
     		int x = 0;
     		int y = 0;
     		if (obj.has("x")) {

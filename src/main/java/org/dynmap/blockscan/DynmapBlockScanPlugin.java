@@ -56,6 +56,8 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonIOException;
 import com.google.gson.JsonSyntaxException;
+import com.google.gson.stream.JsonReader;
+import com.google.gson.stream.MalformedJsonException;
 
 import jline.internal.Log;
 
@@ -103,7 +105,8 @@ public class DynmapBlockScanPlugin
         new PistonMetadataStateHandler(),
         new SnowyMetadataStateHandler(),
         new BedMetadataStateHandler(),
-        new SimpleMetadataStateHandler()
+        new SimpleMetadataStateHandler(true),
+        new SimpleMetadataStateHandler(false)
     };
 
     public DynmapBlockScanPlugin(MinecraftServer srv)
@@ -138,7 +141,9 @@ public class DynmapBlockScanPlugin
             GsonBuilder gb = new GsonBuilder(); // Start with builder
             gb.registerTypeAdapter(BlockTintOverride.class, new BlockTintOverride.Deserializer()); // Add Condition handler1
             Gson parse = gb.create();
-        	overrides = parse.fromJson(rdr, BlockStateOverrides.class);
+            JsonReader jrdr = new JsonReader(rdr);
+            jrdr.setLenient(true);
+        	overrides = parse.fromJson(jrdr, BlockStateOverrides.class);
         	try {
 				override_str.close();
 			} catch (IOException e) {
@@ -157,7 +162,9 @@ public class DynmapBlockScanPlugin
                 gb.registerTypeAdapter(BlockTintOverride.class, new BlockTintOverride.Deserializer()); // Add Condition handler1
                 Gson parse = gb.create();
                 try {
-                    BlockStateOverrides modoverrides = parse.fromJson(rdr, BlockStateOverrides.class);
+                    JsonReader jrdr = new JsonReader(rdr);
+                    jrdr.setLenient(true);
+                    BlockStateOverrides modoverrides = parse.fromJson(jrdr, BlockStateOverrides.class);
                     if (modoverrides != null) {
                         overrides.merge(modoverrides);
                         logger.info("Loaded dynmap overrides from " + mod.getKey());
@@ -225,10 +232,17 @@ public class DynmapBlockScanPlugin
         	// Build generic block state container for block
         	br.sc = new ForgeStateContainer(b, br.renderProps, propMap);
         	if (blockstate != null) {
+                BlockStateOverride ovr = overrides.getOverride(rl.getResourceDomain(), rl.getResourcePath());
             	br.varList = new HashMap<StateRec, List<VariantList>>();
         		// Loop through rendering states in state container
         		for (StateRec sr : br.sc.getValidStates()) {
-        			List<VariantList> vlist = blockstate.getMatchingVariants(sr.getProperties(), models);
+                    Map<String, String> prop = sr.getProperties();
+                    // If we've got key=value for block (multiple blocks in same state file)
+                    if ((ovr != null) && (ovr.blockStateKey != null) && (ovr.blockStateValue != null)) {
+                        prop = new HashMap<String, String>(prop);
+                        prop.put(ovr.blockStateKey, ovr.blockStateValue);
+                    }
+        			List<VariantList> vlist = blockstate.getMatchingVariants(prop, models);
         			br.varList.put(sr, vlist);
         		}
         	}
@@ -268,9 +282,7 @@ public class DynmapBlockScanPlugin
         						BlockModel mod = models.get(modid);	// See if we have it
         						if (mod == null) {
         							mod = loadBlockModelFile(tok[0], tok[1]);
-        							if (mod != null) {
-        								models.put(modid, mod);
-        							}
+    								models.put(modid, mod);
         						}
         						va.modelID = modid;	// save normalized ID
         					}
@@ -293,11 +305,8 @@ public class DynmapBlockScanPlugin
         		if (mod.parentModel == null) {
 					String[] tok = modid.split(":");
 					mod.parentModel = loadBlockModelFile(tok[0], tok[1]);
-					if (mod.parentModel != null) {
-						models.put(modid, mod.parentModel);
-						modelToResolve.push(mod.parentModel);
-						//logger.info("Loaded parent " + modid);
-					}
+					models.put(modid, mod.parentModel);
+					modelToResolve.push(mod.parentModel);
         		}
         	}
         }
@@ -946,9 +955,11 @@ public class DynmapBlockScanPlugin
         	Reader rdr = new InputStreamReader(is, Charsets.UTF_8);
         	Gson parse = BlockState.buildParser();	// Get parser
         	try {
-        	    bs = parse.fromJson(rdr, BlockState.class);
-        	} catch (Exception x) {
-        	    logger.severe("Error processing " + path, x);
+                JsonReader jrdr = new JsonReader(rdr);
+                jrdr.setLenient(true);
+        	    bs = parse.fromJson(jrdr, BlockState.class);
+        	} catch (JsonSyntaxException jsx) {
+                logger.warning(String.format("%s:%s : JSON syntax error in block state file", modid, path), jsx);
         	}
         	try {
         	    is.close();
@@ -971,17 +982,25 @@ public class DynmapBlockScanPlugin
         if (is != null) {	// Found it?
         	Reader rdr = new InputStreamReader(is, Charsets.UTF_8);
         	Gson parse = BlockModel.buildParser();	// Get parser
-        	bs = parse.fromJson(rdr, BlockModel.class);
+        	try {
+        	    JsonReader jrdr = new JsonReader(rdr);
+        	    jrdr.setLenient(true);
+        	    bs = parse.fromJson(jrdr, BlockModel.class);
+        	} catch (JsonSyntaxException jsx) {
+                logger.warning(String.format("%s:%s : JSON syntax error in model file", modid, path), jsx);
+        	}
         	try {
 				is.close();
 			} catch (IOException e) {
 			}
         	if (bs == null) {
         		logger.info(String.format("%s:%s : Failed to load model!", modid, path));
+                bs = new BlockModel();    // Return empty model
         	}
         }
         else {
     		logger.info(String.format("%s:%s : Failed to open model", modid, path));
+    		bs = new BlockModel();    // Return empty model
         }
         return bs;
     }
