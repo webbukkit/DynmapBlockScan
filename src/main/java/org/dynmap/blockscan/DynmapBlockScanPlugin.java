@@ -9,6 +9,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -458,6 +459,27 @@ public class DynmapBlockScanPlugin
         return td;
     }
 
+    // Temporary fix to avoid registering duplicate metadata values (until we get the block state mapping working right...)
+    private Set<String> registeredBlockMeta = new HashSet<String>();
+
+    private int[] pruneDuplicateMeta(String blkname, int[] meta) {
+        List<Integer> goodmeta = new ArrayList<Integer>();
+        for (int mv : meta) {
+            String blkid = blkname + ":" + mv;
+            if (registeredBlockMeta.contains(blkid) == false) {
+                registeredBlockMeta.add(blkid);
+                goodmeta.add(mv);
+            }
+        }
+        if (meta.length != goodmeta.size()) {
+            int[] newmeta = new int[goodmeta.size()];
+            for (int i = 0; i < newmeta.length; i++) {
+                newmeta[i] = goodmeta.get(i);
+            }
+            meta = newmeta;
+        }
+        return meta;
+    }
         
     public void registerSimpleDynmapCubes(String blkname, StateRec state, BlockElement element, WellKnownBlockClasses type) {
     	String[] tok = blkname.split(":");
@@ -467,6 +489,12 @@ public class DynmapBlockScanPlugin
     	if (tok[0].equals("minecraft")) {	// Skip vanilla
     		return;
     	}
+        // Temporary hack to avoid registering metadata duplicates
+    	meta = pruneDuplicateMeta(blkname, meta); 
+    	if (meta.length == 0) {
+            return;
+        }
+
     	// Get record for mod
     	ModDynmapRec td = getModRec(modid);
     	// Create block texture record
@@ -541,13 +569,18 @@ public class DynmapBlockScanPlugin
         }
         return true;
     }
-
+    
     public void registerSimpleDynmapCuboids(String blkname, StateRec state, List<BlockElement> elems, WellKnownBlockClasses type) {
         String[] tok = blkname.split(":");
         String modid = tok[0];
         String blknm = tok[1];
         int[] meta = state.metadata;
         if (tok[0].equals("minecraft")) {   // Skip vanilla
+            return;
+        }
+        // Temporary hack to avoid registering metadata duplicates
+        meta = pruneDuplicateMeta(blkname, meta); 
+        if (meta.length == 0) {
             return;
         }
         // Get record for mod
@@ -647,6 +680,11 @@ public class DynmapBlockScanPlugin
         String blknm = tok[1];
         int[] meta = state.metadata;
         if (tok[0].equals("minecraft")) {   // Skip vanilla
+            return;
+        }
+        // Temporary hack to avoid registering metadata duplicates
+        meta = pruneDuplicateMeta(blkname, meta); 
+        if (meta.length == 0) {
             return;
         }
         // Get record for mod
