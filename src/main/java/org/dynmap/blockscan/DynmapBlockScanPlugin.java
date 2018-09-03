@@ -124,17 +124,12 @@ public class DynmapBlockScanPlugin
 
 
     public void onEnable() {
-        logger.info("onEnable()");
     }
     public void onDisable() {
-        logger.info("onDisable()");
     }
     public void serverStarted() {
-    	logger.info("serverStarted()");
     }
     public void serverStarting() {
-        logger.info("serverStarting()");
-        
         // Load override resources
         InputStream override_str = openResource("dynmapblockscan", "blockstateoverrides.json");
         if (override_str != null) {
@@ -201,15 +196,18 @@ public class DynmapBlockScanPlugin
             			break;
             		case INVISIBLE:
             			uses_nonmodel = true;
-            			logger.info(String.format("%s: Invisible block - nothing to render", rl));
+            			if (DynmapBlockScanMod.verboselogging)
+            			    logger.info(String.format("%s: Invisible block - nothing to render", rl));
             			break;
             		case ENTITYBLOCK_ANIMATED:
             			uses_nonmodel = true;
-            			logger.info(String.format("%s: Animated block - needs to be handled specially", rl));
+                        if (DynmapBlockScanMod.verboselogging)
+                   			logger.info(String.format("%s: Animated block - needs to be handled specially", rl));
             			break;
             		case LIQUID:
             			uses_nonmodel = true;
-            			logger.info(String.format("%s: Liquid block - special handling", rl));
+                        if (DynmapBlockScanMod.verboselogging)
+                            logger.info(String.format("%s: Liquid block - special handling", rl));
             			break;
             	}
             }
@@ -403,7 +401,8 @@ public class DynmapBlockScanPlugin
             if (btr == null) {
                 return null;
             }
-            DynmapBlockScanPlugin.logger.debug("Created block record for " + blknm + Arrays.toString(meta));
+            if (DynmapBlockScanMod.verboselogging)
+                DynmapBlockScanPlugin.logger.debug("Created block record for " + blknm + Arrays.toString(meta));
             // Set matching metadata
             for (int metaval : meta) {
                 btr.setMetaValue(metaval);
@@ -416,7 +415,8 @@ public class DynmapBlockScanPlugin
                 this.modDef = this.txtDef.getModelDefinition();
             }
             CuboidBlockModel mod = this.modDef.addCuboidModel(blknm);
-            DynmapBlockScanPlugin.logger.debug("Created cuboid model for " + blknm + Arrays.toString(meta));
+            if (DynmapBlockScanMod.verboselogging)
+                DynmapBlockScanPlugin.logger.debug("Created cuboid model for " + blknm + Arrays.toString(meta));
             // Set matching metadata
             for (int metaval : meta) {
                 mod.setMetaValue(metaval);
@@ -429,7 +429,8 @@ public class DynmapBlockScanPlugin
                 this.modDef = this.txtDef.getModelDefinition();
             }
             PatchBlockModel mod = this.modDef.addPatchModel(blknm);
-            DynmapBlockScanPlugin.logger.debug("Created patch model for " + blknm + Arrays.toString(meta));
+            if (DynmapBlockScanMod.verboselogging)
+                DynmapBlockScanPlugin.logger.debug("Created patch model for " + blknm + Arrays.toString(meta));
             // Set matching metadata
             for (int metaval : meta) {
                 mod.setMetaValue(metaval);
@@ -454,7 +455,8 @@ public class DynmapBlockScanPlugin
                 return null;
             }
             modTextureDef.put(modid, td);
-            logger.debug("Create dynmap mod record for " + modid);
+            if (DynmapBlockScanMod.verboselogging)
+                logger.debug("Create dynmap mod record for " + modid);
         }
         return td;
     }
@@ -876,7 +878,7 @@ public class DynmapBlockScanPlugin
     	for (ModDynmapRec mod : modTextureDef.values()) {
     		if (mod.txtDef != null) {
     			mod.txtDef.publishDefinition();
-    			logger.info("Published " + mod.txtDef.getModID() + " textures to Dynmap");
+                logger.info("Published " + mod.txtDef.getModID() + " textures to Dynmap");
     		}
     		if (mod.modDef != null) {
                 mod.modDef.publishDefinition();

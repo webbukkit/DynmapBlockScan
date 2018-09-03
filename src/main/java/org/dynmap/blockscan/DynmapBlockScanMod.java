@@ -32,7 +32,7 @@ public class DynmapBlockScanMod
     
     public static DynmapBlockScanPlugin plugin;
     public static File jarfile;
-    public static boolean useforcedchunks;
+    public static boolean verboselogging = false;
     
     public DynmapBlockScanMod() {
     }
@@ -45,12 +45,13 @@ public class DynmapBlockScanMod
         Configuration cfg = new Configuration(event.getSuggestedConfigurationFile());
         try {
             cfg.load();
+            
+           verboselogging = cfg.get("Settings",  "verboselog", false).getBoolean(false);
         }
         finally
         {
             cfg.save();
         }
-
     }
 
     @EventHandler
