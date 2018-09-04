@@ -365,7 +365,7 @@ public class DynmapBlockScanPlugin
     	int nextTxtID = 1;
     	
     	public TextureFile registerTexture(String txtpath) {
-    	    txtpath = txtpath.toLowerCase();
+    	    //txtpath = txtpath.toLowerCase(); Not before 1.11
     		TextureFile txtf = textureIDsByPath.get(txtpath);
     		if (txtf == null) {
     			String txtid = String.format("txt%04d", nextTxtID);
