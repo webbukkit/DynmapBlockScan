@@ -28,7 +28,7 @@ public class ForgeVariantV1 {
     public Boolean smooth_lighting;
     public Boolean gui3d;
     public Map<String, ForgeVariantV1List> submodel;
-    public Map<String, String> custom;
+    public Map<String, Object> custom;
     
 	@Override
 	public int hashCode() {
@@ -157,11 +157,13 @@ public class ForgeVariantV1 {
         }
         if (src.custom != null) {
             if (this.custom == null) {
-                this.custom = new HashMap<String, String>();
+                this.custom = new HashMap<String, Object>();
             }
-            for (Entry<String, String> ent : src.custom.entrySet()) {
-                if (this.custom.containsKey(ent.getKey()) == false) {
-                    this.custom.put(ent.getKey(), ent.getValue());
+            for (Entry<String, Object> ent : src.custom.entrySet()) {
+            	String key = ent.getKey().toString();
+                if (this.custom.containsKey(key) == false) {
+                	String val = ent.getValue().toString();
+                    this.custom.put(key, val);
                 }
             }
         }
