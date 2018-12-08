@@ -17,6 +17,7 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParseException;
 
+import jline.internal.Log;
 import net.minecraft.util.EnumFacing;
 
 // Container for parsed JSON elements from block model

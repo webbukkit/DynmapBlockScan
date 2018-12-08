@@ -1,6 +1,9 @@
 package org.dynmap.blockscan.blockstate;
 
 import com.google.common.collect.Maps;
+
+import jline.internal.Log;
+
 import java.util.Map;
 
 import org.dynmap.blockscan.util.Matrix3D;
@@ -125,7 +128,12 @@ public enum ModelRotation {
     }
     
     public static ModelRotation getModelRotation(int x, int y) {
-        return (ModelRotation)MAP_ROTATIONS.get(Integer.valueOf(combineXY(normalizeAngle(x, 360), normalizeAngle(y, 360))));
+        ModelRotation rot = (ModelRotation)MAP_ROTATIONS.get(Integer.valueOf(combineXY(normalizeAngle(x, 360), normalizeAngle(y, 360))));
+        if (rot == null) {
+            Log.debug("getModelRotation(" + x + "," + y + ")=null");
+            rot = ModelRotation.X0_Y0;
+        }
+        return rot;
     }
 
     static {
