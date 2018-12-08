@@ -16,8 +16,8 @@ import com.google.gson.JsonParseException;
 
 // Container for parsed JSON encoding of Variant from blockstate
 public class Variant {
-	public String model;
-	public ModelRotation rotation;
+	public String model = "cube";
+	public ModelRotation rotation = ModelRotation.X0_Y0;
 	public boolean uvlock = false;
 	public int weight = 1;
 	
@@ -25,11 +25,12 @@ public class Variant {
 	public VariantList subvariants;
 	
 	// Normalized model ID
-	public String modelID;
+	public String modelID = "cube";
 	// Generated and resolved element list
 	public List<BlockElement> elements;
 	
-	public Variant() {}
+	public Variant() {
+	}
 	
 	public Variant(String mod, Integer x, Integer y, Boolean uv, Integer wt) {
 	    this.model = this.modelID = mod;
@@ -109,22 +110,22 @@ public class Variant {
     		JsonObject obj = element.getAsJsonObject();
     		
     		if (obj == null) {
-                var.model = "cube";   // Default?
                 return var;
     		}
+            int x = 0;
+            int y = 0;
+            if (obj.has("x")) {
+                x = obj.get("x").getAsInt();
+            }
+            if (obj.has("y")) {
+                y = obj.get("y").getAsInt();
+            }
+            var.rotation = ModelRotation.getModelRotation(x, y);
     		if (obj.has("model"))
     		    var.model = obj.get("model").getAsString();
     		else
     		    var.model = "cube";   // Default?
-    		int x = 0;
-    		int y = 0;
-    		if (obj.has("x")) {
-    			x = obj.get("x").getAsInt();
-    		}
-    		if (obj.has("y")) {
-    			y = obj.get("y").getAsInt();
-    		}
-    		var.rotation = ModelRotation.getModelRotation(x, y);
+    		var.modelID = var.model;
     		if (obj.has("uvlock")) {
     			var.uvlock = obj.get("uvlock").getAsBoolean();
     		}
