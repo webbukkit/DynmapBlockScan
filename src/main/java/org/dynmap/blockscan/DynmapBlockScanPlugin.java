@@ -1,6 +1,7 @@
 package org.dynmap.blockscan;
 
 
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -8,12 +9,15 @@ import java.io.Reader;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.zip.ZipFile;
+import java.util.zip.ZipEntry;
 import java.util.Set;
 
 import org.apache.logging.log4j.LogManager;
@@ -21,7 +25,6 @@ import org.apache.logging.log4j.Logger;
 import org.dynmap.blockscan.BlockStateOverrides.BlockStateOverride;
 import org.dynmap.blockscan.BlockStateOverrides.BlockTintOverride;
 import org.dynmap.blockscan.blockstate.BlockState;
-import org.dynmap.blockscan.blockstate.ModelRotation;
 import org.dynmap.blockscan.blockstate.Variant;
 import org.dynmap.blockscan.blockstate.VariantList;
 import org.dynmap.blockscan.model.BlockElement;
@@ -87,7 +90,6 @@ public class DynmapBlockScanPlugin
     
     private Map<EnumFacing, BlockSide> faceToSide = new HashMap<EnumFacing, BlockSide>();
     private BlockStateOverrides overrides;
-
     
     public static class BlockRecord {
     	public StateContainer sc;
@@ -122,7 +124,133 @@ public class DynmapBlockScanPlugin
         faceToSide.put(EnumFacing.EAST, BlockSide.FACE_5);
     }
 
-
+    private static class PathElement {
+    	String[] modids;
+    	PathElement(String mid) {
+    		modids = new String[] { mid };
+    	}
+    	void addModId(String mid) {
+    		modids = Arrays.copyOf(modids, modids.length + 1);
+    		modids[modids.length-1] = mid;
+    	}
+    }
+    private static class PathDirectory extends PathElement {
+    	Map<String,PathElement> entries = new HashMap<String, PathElement>();
+    	PathDirectory(String mid) {
+    		super(mid);
+    	}
+    	
+    }
+    private static Map<String, PathElement> assetmap;	// Map of asset paths and mods containing them
+    
+    private void addElement(String modid, String n) {
+    	String[] tok = n.split("/");
+    	PathElement pe;
+    	Map<String, PathElement> m = assetmap;
+    	for (int i = 0; i < (tok.length - 1); i++) {	// Handle directory
+    		if (tok[i].equals(".")) {	// Skip dot path elements
+    		}
+    		else {
+    			pe = m.get(tok[i]);
+    			// New - add directory record
+    			if (pe == null) {
+    				pe = new PathDirectory(modid);
+    				m.put(tok[i], pe);	// Add to parent
+    			}
+    			// If existing is file record, promote
+    			else if ((pe instanceof PathDirectory) == false) {
+    				PathElement pe2 = new PathDirectory(modid);
+    				for (String mm : pe.modids) {
+    					pe2.addModId(mm);
+    				}
+    				m.put(tok[i], pe2);	// Add to parent
+    				pe = pe2;
+    			}
+    			else {
+    				pe.addModId(modid);
+    			}
+				m = ((PathDirectory)pe).entries;
+    		}
+    	}
+    	// Look for file record
+    	pe = m.get(tok[tok.length - 1]);
+    	if (pe == null) {
+    		pe = new PathElement(modid);
+    		m.put(tok[tok.length - 1], pe);
+    	}
+    	else {
+    		pe.addModId(modid);
+    	}
+    }
+    private static PathElement findElement(Map<String, PathElement> m, String pth) {
+    	String[] tok = pth.split("/");
+    	for (int i = 0; i < (tok.length - 1); i++) {	// Handle directory
+    		if (tok[i].equals(".")) {	// Skip dot path elements
+    			continue;
+    		}
+    		PathElement pe = m.get(tok[i]);
+    		if (pe instanceof PathDirectory) {
+    			m = ((PathDirectory)pe).entries;
+    		}
+    		else {
+    			return null;
+    		}
+    	}
+    	return m.get(tok[tok.length - 1]);
+    }
+    
+    private static String scanForElement(Map<String, PathElement> m, String base, String fname) {
+    	for (Entry<String, PathElement> me : m.entrySet()) {
+    		PathElement p = me.getValue();
+    		if (p instanceof PathDirectory) {
+    			PathDirectory pd = (PathDirectory) p;
+    			String rslt = scanForElement(pd.entries, base + "/" + me.getKey(), fname);
+    			if (rslt != null) return rslt;
+    		}
+    		else if (me.getKey().equals(fname)) {
+    			return base + "/" + me.getKey();
+    		}
+    	}
+    	return null;
+    }
+    
+    public void buildAssetMap() {
+    	assetmap = new HashMap<String, PathElement>();
+        List<ModContainer> mcl = Loader.instance().getModList();
+        for (ModContainer mc : mcl) {
+        	String mid = mc.getModId().toLowerCase();
+        	File src = mc.getSource();
+        	if (src.isFile() && src.canRead()) {	// Is in Jar?
+        		ZipFile zf = null;
+        		int cnt = 0;
+                try {
+                    zf = new ZipFile(src);
+                    if (zf != null) {
+                    	Enumeration<? extends ZipEntry> zenum = zf.entries();
+    					while(zenum.hasMoreElements()) {
+    						ZipEntry ze = zenum.nextElement();
+                    		String n = ze.getName().replace('\\', '/');
+                    		if (n.startsWith("assets/")) {	// Asset path?
+                    			addElement(mid, n);
+                    			cnt++;
+                    		}
+                    	}
+                    }
+                } catch (IOException e) {
+                    logger.severe("Error opening mod - " + src.getPath());
+                } finally {
+                	if (zf != null) {
+						try {
+							zf.close();
+						} catch (IOException e) {
+						}
+                	}
+                }
+            	logger.info("modid: " + mid + ", src=" + src.getAbsolutePath() + ", cnt=" + cnt);
+        	}
+        }
+    }
+    
     public void onEnable() {
     }
     public void onDisable() {
@@ -130,6 +258,7 @@ public class DynmapBlockScanPlugin
     public void serverStarted() {
     }
     public void serverStarting() {
+    	buildAssetMap();
         // Load override resources
         InputStream override_str = openResource("dynmapblockscan", "blockstateoverrides.json");
         if (override_str != null) {
@@ -151,7 +280,7 @@ public class DynmapBlockScanPlugin
         }
         // Scan other modules for block overrides
         for (Entry<String, ModContainer> mod : Loader.instance().getIndexedModList().entrySet()) {
-            InputStream str = openResource(mod.getKey(), "assets/" + mod.getKey() + "/dynmap/blockstateoverrides.json");
+            InputStream str = openAssetResource(mod.getKey(), "dynmap", "blockstateoverrides.json", true);
             if (str != null) {
                 Reader rdr = new InputStreamReader(str, Charsets.UTF_8);
                 GsonBuilder gb = new GsonBuilder(); // Start with builder
@@ -321,7 +450,7 @@ public class DynmapBlockScanPlugin
                         if (vl.variantList.size() > 0) {
                             Variant va = vl.variantList.get(0);
                             if(va.generateElements(models) == false) {
-                                logger.warning(va.toString() + ": failed to generate elements for " + blkname + "[" + var.getKey() + "]");
+                                logger.debug(va.toString() + ": failed to generate elements for " + blkname + "[" + var.getKey() + "]");
                             }
                             else {
                                 elems.addAll(va.elements);
@@ -354,6 +483,8 @@ public class DynmapBlockScanPlugin
         logger.info("Elements generated");
         
         publishDynmapModData();
+        
+        assetmap = null;
     }
     
     private ModSupportAPI dynmap_api;
@@ -888,33 +1019,41 @@ public class DynmapBlockScanPlugin
     
     }
     
+    public static InputStream openAssetResource(String modid, String subpath, String resourcepath, boolean scan) {
+    	String pth = "assets/" + modid + "/" + subpath + "/" + resourcepath;
+    	PathElement pe = findElement(assetmap, pth);
+    	InputStream is = null;
+    	// If found, scan mods matching path
+    	if (pe != null) {
+    	    is = openResource(modid, pth);
+    		if (is == null) {
+    			for (String mid : pe.modids) {
+    				is = openResource(mid, pth);
+    				if (is != null) return is;
+    			}
+    		}
+    	}
+    	// If not found, look for resource under subpath (some mods do this for blockstate...)
+    	if ((is == null) && scan) {
+    		pth = "assets/" + modid + "/" + subpath;
+    		pe = findElement(assetmap, pth);	// Find subpath
+    		if (pe instanceof PathDirectory) {
+    			pth = scanForElement(((PathDirectory)pe).entries, pth, resourcepath);
+    			if (pth != null) {
+    				is = openResource(modid, pth);
+    			}
+    		}
+    	}
+    	return is;
+    }
     public static InputStream openResource(String modid, String rname) {
         String rname_lc = rname.toLowerCase();
-        if (modid != null) {
-            ModContainer mc = Loader.instance().getIndexedModList().get(modid);
-            Object mod = (mc != null)?mc.getMod():null;
-            if (mod != null) {
-                InputStream is = mod.getClass().getClassLoader().getResourceAsStream(rname);
-                if (is == null) {
-                    is = mod.getClass().getClassLoader().getResourceAsStream(rname_lc);
-                }
-                if (is != null) {
-                    return is;
-                }
-            }
-        }
-        List<ModContainer> mcl = Loader.instance().getModList();
-        for (ModContainer mc : mcl) {
-            Object mod = mc.getMod();
-            if (mod == null) continue;
-            InputStream is = null;
-            try {
-                is = mod.getClass().getClassLoader().getResourceAsStream(rname);
-                if (is == null) {
-                    is = mod.getClass().getClassLoader().getResourceAsStream(rname_lc);
-                }
-            } catch (Error x) {
-                logger.info("Error loading " + rname + " from " + mc.getModId());
+        ModContainer mc = Loader.instance().getIndexedModList().get(modid);
+        Object mod = (mc != null)?mc.getMod():null;
+        if (mod != null) {
+            InputStream is = mod.getClass().getClassLoader().getResourceAsStream(rname);
+            if (is == null) {
+                is = mod.getClass().getClassLoader().getResourceAsStream(rname_lc);
             }
             if (is != null) {
                 return is;
@@ -988,9 +1127,13 @@ public class DynmapBlockScanPlugin
     }
     
     private static BlockState loadBlockStateFile(String modid, String respath) {
+    	// Default path
         String path = "assets/" + modid + "/blockstates/" + respath + ".json";
     	BlockState bs = null;
-        InputStream is = openResource(modid, path);
+        InputStream is = openAssetResource(modid, "blockstates", respath + ".json", true);
+        if (is == null) {	// Not found? scan for name under blockstates directory (some mods do this...)
+        	
+        }
         if (is != null) {	// Found it?
         	Reader rdr = new InputStreamReader(is, Charsets.UTF_8);
         	Gson parse = BlockState.buildParser();	// Get parser
@@ -1018,7 +1161,7 @@ public class DynmapBlockScanPlugin
     private static BlockModel loadBlockModelFile(String modid, String respath) {
         String path = "assets/" + modid + "/models/" + respath + ".json";
     	BlockModel bs = null;
-        InputStream is = openResource(modid, path);
+        InputStream is = openAssetResource(modid, "models", respath + ".json", true);
         if (is != null) {	// Found it?
         	Reader rdr = new InputStreamReader(is, Charsets.UTF_8);
         	Gson parse = BlockModel.buildParser();	// Get parser
@@ -1047,7 +1190,7 @@ public class DynmapBlockScanPlugin
     
     public static class OurLog {
         Logger log;
-        public static final String DM = "[DynmapBlockScan] ";
+        public static final String DM = "";
         OurLog() {
             log = LogManager.getLogger("DynmapBlockScan");
         }
