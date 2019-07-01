@@ -46,6 +46,9 @@ minecraft {
 
 repositories {
     mavenLocal()
+    maven {
+        url = "http://repo.mikeprimm.com"
+    }
 }
 
 configurations {
