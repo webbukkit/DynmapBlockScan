@@ -20,6 +20,11 @@ import java.util.zip.ZipFile;
 import java.util.zip.ZipEntry;
 import java.util.Set;
 
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.renderer.BlockRendererDispatcher;
+import net.minecraft.client.renderer.block.model.BakedQuad;
+import net.minecraft.client.renderer.block.model.IBakedModel;
+import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.dynmap.blockscan.BlockStateOverrides.BlockStateOverride;
@@ -257,7 +262,246 @@ public class DynmapBlockScanPlugin
     }
     public void serverStarted() {
     }
+
+    private static float intBitsToRoundedFloat(int data) {
+        return Math.round(Float.intBitsToFloat(data) * 1000000d) / 1000000f;
+    }
+
+    private static int X = 0;
+    private static int Y = 1;
+    private static int Z = 2;
+    private static int U = 3;
+    private static int V = 4;
+
+    private static boolean isPerpendicular(double[] vec0, double[] vecU, double[] vecV) {
+        return (vecU[X] - vec0[X]) * (vecV[X] - vec0[X]) + (vecU[Y] - vec0[Y]) * (vecV[Y] - vec0[Y]) + (vecU[Z] - vec0[Z]) * (vecV[Z] - vec0[Z]) == 0;
+    }
+
+    private static boolean flipV = true;
+
+    private static void quads(IBakedModel model, IBlockState blockState, EnumFacing facing,
+                              ModDynmapRec modRecord,
+                              PatchBlockModel blockModelRecord,
+                              BlockTextureRecord blockTextureRecord,
+                              int[] patchIndex) {
+        List<BakedQuad> quads = model.getQuads(blockState, facing, 0);
+
+        for (BakedQuad quad : quads) {
+            TextureAtlasSprite sprite = quad.getSprite();
+            double minU = sprite.getMinU();
+            double minV = sprite.getMinV();
+            double sizeU = sprite.getMaxU() - minU;
+            double sizeV = sprite.getMaxV() - minV;
+
+            if (!sprite.getIconName().equals("missingno")) {
+                int[] vertexData = quad.getVertexData();
+                int stride = quad.getFormat().getIntegerSize();
+                int numVertices = vertexData.length / stride;
+                double[][] vertices = new double[numVertices][5];
+                for (int i = 0; i < numVertices; i++) {
+                    int index = i * stride;
+                    double x = intBitsToRoundedFloat(vertexData[index]);
+                    double y = intBitsToRoundedFloat(vertexData[index + 1]);
+                    double z = intBitsToRoundedFloat(vertexData[index + 2]);
+
+                    vertices[i][X] = x;
+                    vertices[i][Y] = y;
+                    vertices[i][Z] = z;
+
+                    if (quad.getFormat().hasUvOffset(0)) {
+                        int uvIndex = quad.getFormat().getUvOffsetById(0) / 4;
+
+                        double atlasU = intBitsToRoundedFloat(vertexData[index + uvIndex]);
+                        double atlasV = intBitsToRoundedFloat(vertexData[index + uvIndex + 1]);
+
+                        vertices[i][U] = Math.round((atlasU - minU) / sizeU * 16) / 16D;
+                        vertices[i][V] = Math.round((atlasV - minV) / sizeV * 16) / 16D;
+
+                        if (flipV)
+                            vertices[i][V] = 1 - vertices[i][V];
+                    }
+                }
+
+                if (flipV)
+                    for (int i = 0; i < vertices.length / 2; i++) {
+                        double[] temp = vertices[i];
+                        vertices[i] = vertices[vertices.length - i - 1];
+                        vertices[vertices.length - i - 1] = temp;
+                    }
+
+                int vec0Index = 0;
+                double smallestUV = Double.MAX_VALUE;
+                for (int i = 0; i < 4; i++) {
+                    double uv = vertices[i][U] + vertices[i][V];
+                    if (uv < smallestUV) {
+                        smallestUV = uv;
+                        vec0Index = i;
+                    }
+                }
+
+                double[] vec0 = new double[]{
+                        vertices[vec0Index][X],
+                        vertices[vec0Index][Y],
+                        vertices[vec0Index][Z],
+                        vertices[vec0Index][U],
+                        vertices[vec0Index][V]
+                };
+
+                int vecUIndex = (vec0Index + 1) % 4;
+                int vecVIndex = (vec0Index + 2) % 4;
+                for (int i = 0; i < 3; i++) {
+                    vecUIndex = (vec0Index + i + 1) % 4 == vec0Index ? (vec0Index + i + 2) % 4 : (vec0Index + i + 1) % 4;
+                    vecVIndex = (vec0Index + i + 2) % 4 == vec0Index ? (vec0Index + i + 3) % 4 : (vec0Index + i + 2) % 4;
+
+                    if (isPerpendicular(vec0, vertices[vecUIndex], vertices[vecVIndex]))
+                        break;
+                }
+
+                double[] vecU = new double[]{
+                        vertices[vecUIndex][X] - vec0[X],
+                        vertices[vecUIndex][Y] - vec0[Y],
+                        vertices[vecUIndex][Z] - vec0[Z],
+                        vertices[vecUIndex][U],
+                        vertices[vecUIndex][V]
+                };
+
+                double[] vecV = new double[]{
+                        vertices[vecVIndex][X] - vec0[X],
+                        vertices[vecVIndex][Y] - vec0[Y],
+                        vertices[vecVIndex][Z] - vec0[Z],
+                        vertices[vecVIndex][U],
+                        vertices[vecVIndex][V]
+                };
+
+                double texMinU = vec0[U];
+                double texMinV = vec0[V];
+                double texMaxU = vecU[U];
+                double texMaxV = vecV[V];
+                double texSizeU = texMaxU - texMinU;
+                double texSizeV = texMaxV - texMinV;
+
+                double[] vecTexU = texSizeU == 0 ? vecU : new double[]{
+                        vecU[X] / texSizeU,
+                        vecU[Y] / texSizeU,
+                        vecU[Z] / texSizeU
+                };
+
+                double[] vecTexV = texSizeV == 0 ? vecV : new double[]{
+                        vecV[X] / texSizeV,
+                        vecV[Y] / texSizeV,
+                        vecV[Z] / texSizeV
+                };
+
+                double lenU = Math.sqrt(vecU[X] * vecU[X] + vecU[Y] * vecU[Y] + vecU[Z] * vecU[Z]);
+                double lenV = Math.sqrt(vecV[X] * vecV[X] + vecV[Y] * vecV[Y] + vecV[Z] * vecV[Z]);
+
+                double[] vecUnitU = lenU == 0 ? new double[]{0, 0, 0} : new double[]{vecU[X] / lenU, vecU[Y] / lenU, vecU[Z] / lenU};
+                double[] vecUnitV = lenV == 0 ? new double[]{0, 0, 0} : new double[]{vecV[X] / lenV, vecV[Y] / lenV, vecV[Z] / lenV};
+
+                double[] offsetU = new double[]{vecUnitU[X] * texMinU, vecUnitU[Y] * texMinU, vecUnitU[Z] * texMinU};
+                double[] offsetV = new double[]{vecUnitV[X] * texMinV, vecUnitV[Y] * texMinV, vecUnitV[Z] * texMinV};
+
+                double[] vecTex0 = new double[]{
+                        vec0[X] - offsetU[X] - offsetV[X],
+                        vec0[Y] - offsetU[Y] - offsetV[Y],
+                        vec0[Z] - offsetU[Z] - offsetV[Z]
+                };
+
+                String patchIdString;
+
+                if (false ||
+                        vecTexU[X] + vec0[X] > 2 || vecTexU[X] + vec0[X] < -1 ||
+                        vecTexU[Y] + vec0[Y] > 2 || vecTexU[Y] + vec0[Y] < -1 ||
+                        vecTexU[Z] + vec0[Z] > 2 || vecTexU[Z] + vec0[Z] < -1 ||
+                        vecTexV[X] + vec0[X] > 2 || vecTexV[X] + vec0[X] < -1 ||
+                        vecTexV[Y] + vec0[Y] > 2 || vecTexV[Y] + vec0[Y] < -1 ||
+                        vecTexV[Z] + vec0[Z] > 2 || vecTexV[Z] + vec0[Z] < -1
+                ) {
+                    // Ignore UV mapping when vectors are out of bounds
+                    patchIdString = blockModelRecord.addPatch(
+                            vec0[X], vec0[Y], vec0[Z],
+                            vecU[X] + vec0[X], vecU[Y] + vec0[Y], vecU[Z] + vec0[Z],
+                            vecV[X] + vec0[X], vecV[Y] + vec0[Y], vecV[Z] + vec0[Z],
+                            0, 1,
+                            0, 0, 1, 1,
+                            SideVisible.TOP
+                    );
+                } else {
+                    // Render with correct UV mapping
+                    patchIdString = blockModelRecord.addPatch(
+                            vecTex0[X], vecTex0[Y], vecTex0[Z],
+                            vecTexU[X] + vecTex0[X], vecTexU[Y] + vecTex0[Y], vecTexU[Z] + vecTex0[Z],
+                            vecTexV[X] + vecTex0[X], vecTexV[Y] + vecTex0[Y], vecTexV[Z] + vecTex0[Z],
+                            texMinU, texMaxU,
+                            texMinV, texMinV, texMaxV, texMaxV,
+                            SideVisible.TOP
+                    );
+                }
+
+                if (patchIdString != null) {
+                    TextureFile textureFile = modRecord.registerTexture(sprite.getIconName());
+
+                    TextureModifier textureModifier = TextureModifier.NONE;
+
+                    // quick and dirty hack to render minecraft foliage correctly
+                    /*if (sprite.getIconName().contains("grass")) {
+                        if (sprite.getIconName().contains("side"))
+                            textureModifier = TextureModifier.GRASSSIDE;
+                        else
+                            textureModifier = TextureModifier.GRASSTONED;
+                    } else if (sprite.getIconName().contains("leaves")) {
+                        textureModifier = TextureModifier.FOLIAGETONED;
+                    }*/
+
+                    blockTextureRecord.setPatchTexture(textureFile, textureModifier, patchIndex[0]);
+
+                    patchIndex[0]++;
+                }
+            }
+        }
+    }
+
+    private void extractModelsFromRendererDispatcher() {
+        BlockRendererDispatcher blockRendererDispatcher = Minecraft.getMinecraft().getBlockRendererDispatcher();
+
+        for (Block block : Block.REGISTRY) {
+            ResourceLocation resourceLocation = Block.REGISTRY.getNameForObject(block);
+
+            String modId = resourceLocation.getResourceDomain();
+            String blockName = resourceLocation.getResourcePath();
+
+            if (modId.equals("minecraft")) continue;
+
+            ModDynmapRec modRecord = getModRec(modId);
+
+            BlockStateContainer blockStateContainer = block.getBlockState();
+            for (IBlockState blockState : blockStateContainer.getValidStates()) {
+                int stateMeta = block.getMetaFromState(blockState);
+
+                int[] meta = new int[]{stateMeta};
+
+                PatchBlockModel blockModelRecord = modRecord.getPatchModelRec(blockName, meta);
+                BlockTextureRecord blockTextureRecord = modRecord.getBlockTxtRec(blockName, meta);
+
+                IBakedModel model = blockRendererDispatcher.getModelForState(blockState);
+
+                int[] patchIndex = new int[]{0};
+
+                quads(model, blockState, null, modRecord, blockModelRecord, blockTextureRecord, patchIndex);
+
+                for (EnumFacing facing : EnumFacing.values()) {
+                    quads(model, blockState, facing, modRecord, blockModelRecord, blockTextureRecord, patchIndex);
+                }
+            }
+        }
+    }
+
     public void serverStarting() {
+        extractModelsFromRendererDispatcher();
+        blockscan();
+    }
+
+    public void blockscan() {
     	buildAssetMap();
         // Load override resources
         InputStream override_str = openResource("dynmapblockscan", "blockstateoverrides.json");
