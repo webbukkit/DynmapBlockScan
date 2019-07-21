@@ -476,21 +476,26 @@ public class DynmapBlockScanPlugin
 
             BlockStateContainer blockStateContainer = block.getBlockState();
             for (IBlockState blockState : blockStateContainer.getValidStates()) {
-                int stateMeta = block.getMetaFromState(blockState);
+                try {
+                    int stateMeta = block.getMetaFromState(blockState);
 
-                int[] meta = new int[]{stateMeta};
+                    int[] meta = new int[]{stateMeta};
 
-                PatchBlockModel blockModelRecord = modRecord.getPatchModelRec(blockName, meta);
-                BlockTextureRecord blockTextureRecord = modRecord.getBlockTxtRec(blockName, meta);
+                    PatchBlockModel blockModelRecord = modRecord.getPatchModelRec(blockName, meta);
+                    BlockTextureRecord blockTextureRecord = modRecord.getBlockTxtRec(blockName, meta);
 
-                IBakedModel model = blockRendererDispatcher.getModelForState(blockState);
+                    IBakedModel model = blockRendererDispatcher.getModelForState(blockState);
 
-                int[] patchIndex = new int[]{0};
+                    int[] patchIndex = new int[]{0};
 
-                quads(model, blockState, null, modRecord, blockModelRecord, blockTextureRecord, patchIndex);
+                    quads(model, blockState, null, modRecord, blockModelRecord, blockTextureRecord, patchIndex);
 
-                for (EnumFacing facing : EnumFacing.values()) {
-                    quads(model, blockState, facing, modRecord, blockModelRecord, blockTextureRecord, patchIndex);
+                    for (EnumFacing facing : EnumFacing.values()) {
+                        quads(model, blockState, facing, modRecord, blockModelRecord, blockTextureRecord, patchIndex);
+                    }
+                } catch (Exception exception) {
+                    RuntimeException blockStateError = new RuntimeException("Error while extracting model for BlockState " + blockState.toString(), exception);
+                    blockStateError.printStackTrace();
                 }
             }
         }
