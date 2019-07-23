@@ -461,6 +461,8 @@ public class DynmapBlockScanPlugin
         }
     }
 
+    private List<String> previouslyLoaded = new ArrayList<>();
+
     private void extractModelsFromRendererDispatcher() {
         BlockRendererDispatcher blockRendererDispatcher = Minecraft.getMinecraft().getBlockRendererDispatcher();
 
@@ -478,6 +480,10 @@ public class DynmapBlockScanPlugin
             for (IBlockState blockState : blockStateContainer.getValidStates()) {
                 try {
                     int stateMeta = block.getMetaFromState(blockState);
+
+                    String loadedName = modId + ":" + blockName + ":" + stateMeta;
+                    if (previouslyLoaded.contains(loadedName)) continue;
+                    previouslyLoaded.add(loadedName);
 
                     int[] meta = new int[]{stateMeta};
 
@@ -693,6 +699,9 @@ public class DynmapBlockScanPlugin
         	BlockRecord br = blockRecords.get(blkname);
         	if (br.sc != null) {
         		for (Entry<StateRec, List<VariantList>> var : br.varList.entrySet()) {
+                    String loadedName = blkname + ":" + var.getKey().metadata[0];
+                    if (previouslyLoaded.contains(loadedName)) continue;
+
         		    // Produce merged element lists : for now, ignore random weights and just use first element of each section
         		    List<BlockElement> elems = new ArrayList<BlockElement>();
                     for (VariantList vl : var.getValue()) {
