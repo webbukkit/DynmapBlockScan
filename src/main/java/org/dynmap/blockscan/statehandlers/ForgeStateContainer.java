@@ -9,23 +9,23 @@ import java.util.Set;
 import com.google.common.collect.ImmutableMap;
 
 import net.minecraft.block.Block;
-import net.minecraft.block.BlockBush;
-import net.minecraft.block.BlockCrops;
-import net.minecraft.block.BlockFlower;
-import net.minecraft.block.BlockFlowingFluid;
-import net.minecraft.block.BlockGrass;
-import net.minecraft.block.BlockLeaves;
-import net.minecraft.block.BlockTallGrass;
-import net.minecraft.block.BlockVine;
-import net.minecraft.block.state.IBlockState;
+import net.minecraft.block.BlockState;
+import net.minecraft.block.BushBlock;
+import net.minecraft.block.CropsBlock;
+import net.minecraft.block.FlowerBlock;
+import net.minecraft.block.FlowingFluidBlock;
+import net.minecraft.block.GrassBlock;
+import net.minecraft.block.LeavesBlock;
+import net.minecraft.block.TallGrassBlock;
+import net.minecraft.block.VineBlock;
 import net.minecraft.state.IProperty;
 import net.minecraft.util.IStringSerializable;
 
 public class ForgeStateContainer extends StateContainer {
 
 	public ForgeStateContainer(Block blk, Set<String> renderprops, Map<String, List<String>> propMap) {
-		List<IBlockState> bsl = blk.getStateContainer().getValidStates();
-		IBlockState defstate = blk.getDefaultState();
+		List<BlockState> bsl = blk.getStateContainer().getValidStates();
+		BlockState defstate = blk.getDefaultState();
 		if (renderprops == null) {
 			renderprops = new HashSet<String>();
 			for (String pn : propMap.keySet()) {
@@ -42,7 +42,7 @@ public class ForgeStateContainer extends StateContainer {
 		
 		this.defStateIndex = 0;
 		int idx = 0;
-		for (IBlockState bs : bsl) {
+		for (BlockState bs : bsl) {
 			ImmutableMap.Builder<String,String> bld = ImmutableMap.builder();
 			for (IProperty<?> ent : bs.getProperties()) {
 				String pn = ent.getName();
@@ -75,28 +75,28 @@ public class ForgeStateContainer extends StateContainer {
 			idx++;
 		}
 		// Check for well-known block types
-		if (blk instanceof BlockLeaves) {
+		if (blk instanceof LeavesBlock) {
 		    type = WellKnownBlockClasses.LEAVES;
 		}
-		else if (blk instanceof BlockCrops) {
+		else if (blk instanceof CropsBlock) {
             type = WellKnownBlockClasses.CROPS;
 		}
-		else if (blk instanceof BlockFlower) {
+		else if (blk instanceof FlowerBlock) {
 		    type = WellKnownBlockClasses.FLOWER;
 		}
-		else if (blk instanceof BlockTallGrass) {
+		else if (blk instanceof TallGrassBlock) {
             type = WellKnownBlockClasses.TALLGRASS;
 		}
-		else if (blk instanceof BlockVine) {
+		else if (blk instanceof VineBlock) {
 		    type = WellKnownBlockClasses.VINES;
 		}
-        else if (blk instanceof BlockBush) {
+        else if (blk instanceof BushBlock) {
             type = WellKnownBlockClasses.BUSH;
         }
-        else if (blk instanceof BlockGrass) {
+        else if (blk instanceof GrassBlock) {
             type = WellKnownBlockClasses.GRASS;
         }
-        else if (blk instanceof BlockFlowingFluid) {
+        else if (blk instanceof FlowingFluidBlock) {
             type = WellKnownBlockClasses.LIQUID;
         }
 	}

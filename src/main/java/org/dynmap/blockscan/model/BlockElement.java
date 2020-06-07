@@ -17,14 +17,14 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParseException;
 
-import net.minecraft.util.EnumFacing;
+import net.minecraft.util.Direction;
 
 // Container for parsed JSON elements from block model
 public class BlockElement {
     public float[] from;
     public float[] to;
     public ElementRotation rotation = null;
-    public Map<EnumFacing, BlockFace> faces = Collections.emptyMap();
+    public Map<Direction, BlockFace> faces = Collections.emptyMap();
     public boolean shade = true;
     
     public boolean uvlock = false;
@@ -47,8 +47,8 @@ public class BlockElement {
     	}
     	shade = src.shade;
     	// Build resolved copies of faces
-    	faces = new HashMap<EnumFacing, BlockFace>();
-    	for (Entry<EnumFacing, BlockFace> face : src.faces.entrySet()) {
+    	faces = new HashMap<Direction, BlockFace>();
+    	for (Entry<Direction, BlockFace> face : src.faces.entrySet()) {
     		BlockFace f = face.getValue();
     		String v = txtrefs.findTextureByID(f.texture);	// Resolve texture
     		if (v == null) {	
@@ -102,7 +102,7 @@ public class BlockElement {
     		return false;
     	}
     	// Number of faces
-    	for (EnumFacing f : EnumFacing.values()) {
+    	for (Direction f : Direction.values()) {
     		BlockFace ff = faces.get(f);
     		if ((ff == null) || (ff.isFullFace() == false)) {
     			return false;
@@ -128,9 +128,9 @@ public class BlockElement {
     		}
     		if (obj.has("faces")) {
     			JsonObject f = obj.get("faces").getAsJsonObject();
-    			be.faces = new HashMap<EnumFacing, BlockFace>();
+    			be.faces = new HashMap<Direction, BlockFace>();
     			for (Entry<String, JsonElement> fe : f.entrySet()) {
-    				EnumFacing facing = EnumFacing.byName(fe.getKey());
+    				Direction facing = Direction.byName(fe.getKey());
     				if (facing != null) {
     					be.faces.put(facing, context.deserialize(fe.getValue(), BlockFace.class));
     				}

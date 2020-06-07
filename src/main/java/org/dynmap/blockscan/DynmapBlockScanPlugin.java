@@ -63,7 +63,6 @@ import com.google.gson.GsonBuilder;
 import com.google.gson.JsonIOException;
 import com.google.gson.JsonSyntaxException;
 import com.google.gson.stream.JsonReader;
-import com.google.gson.stream.MalformedJsonException;
 
 import org.dynmap.blockscan.statehandlers.DoorStateHandler;
 import org.dynmap.blockscan.statehandlers.ForgeStateContainer;
@@ -73,17 +72,14 @@ import org.dynmap.blockscan.statehandlers.NSEWConnectedMetadataStateHandler;
 import org.dynmap.blockscan.statehandlers.GateMetadataStateHandler;
 
 import net.minecraft.block.Block;
-import net.minecraft.block.state.IBlockState;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.state.IProperty;
-import net.minecraft.util.EnumFacing;
+import net.minecraft.util.Direction;
 import net.minecraft.util.IStringSerializable;
 import net.minecraft.util.ObjectIntIdentityMap;
 import net.minecraft.util.ResourceLocation;
-import net.minecraft.world.chunk.BlockStateContainer;
 import net.minecraftforge.fml.ModContainer;
 import net.minecraftforge.fml.ModList;
-import net.minecraftforge.fml.ModLoader;
 import net.minecraftforge.fml.loading.moddiscovery.ModFile;
 import net.minecraftforge.fml.loading.moddiscovery.ModFileInfo;
 import net.minecraftforge.fml.loading.moddiscovery.ModInfo;
@@ -93,7 +89,7 @@ public class DynmapBlockScanPlugin
     public static OurLog logger = new OurLog();
     public static DynmapBlockScanPlugin plugin;
     
-    private Map<EnumFacing, BlockSide> faceToSide = new HashMap<EnumFacing, BlockSide>();
+    private Map<Direction, BlockSide> faceToSide = new HashMap<Direction, BlockSide>();
     private BlockStateOverrides overrides;
     
     public static class BlockRecord {
@@ -121,12 +117,12 @@ public class DynmapBlockScanPlugin
     {
         plugin = this;
         
-        faceToSide.put(EnumFacing.DOWN, BlockSide.FACE_0);
-        faceToSide.put(EnumFacing.UP, BlockSide.FACE_1);
-        faceToSide.put(EnumFacing.NORTH, BlockSide.FACE_2);
-        faceToSide.put(EnumFacing.SOUTH, BlockSide.FACE_3);
-        faceToSide.put(EnumFacing.WEST, BlockSide.FACE_4);
-        faceToSide.put(EnumFacing.EAST, BlockSide.FACE_5);
+        faceToSide.put(Direction.DOWN, BlockSide.FACE_0);
+        faceToSide.put(Direction.UP, BlockSide.FACE_1);
+        faceToSide.put(Direction.NORTH, BlockSide.FACE_2);
+        faceToSide.put(Direction.SOUTH, BlockSide.FACE_3);
+        faceToSide.put(Direction.WEST, BlockSide.FACE_4);
+        faceToSide.put(Direction.EAST, BlockSide.FACE_5);
     }
 
     private static class PathElement {
@@ -319,21 +315,21 @@ public class DynmapBlockScanPlugin
         // Now process models from block records
         Map<String, BlockModel> models = new HashMap<String, BlockModel>();
         
-        ObjectIntIdentityMap<IBlockState> bsids = Block.BLOCK_STATE_IDS;
+        ObjectIntIdentityMap<net.minecraft.block.BlockState> bsids = Block.BLOCK_STATE_IDS;
         Block baseb = null;
-        Iterator<IBlockState> iter = bsids.iterator();
+        Iterator<net.minecraft.block.BlockState> iter = bsids.iterator();
         // Scan blocks and block states
         while (iter.hasNext()) {
-            IBlockState blkstate = iter.next();
+            net.minecraft.block.BlockState blkstate = iter.next();
             Block b = blkstate.getBlock();
             if (b == baseb) { continue; }
             ResourceLocation rl = b.getRegistryName();
             //logger.info(String.format("Block %s: %d", rl, Block.getIdFromBlock(b)));
-            net.minecraft.state.StateContainer<Block, IBlockState> bsc = b.getStateContainer();
+            net.minecraft.state.StateContainer<Block, net.minecraft.block.BlockState> bsc = b.getStateContainer();
             // See if any of the block states use MODEL
             boolean uses_model = false;
             boolean uses_nonmodel = false;
-            for (IBlockState bs : bsc.getValidStates()) {
+            for (net.minecraft.block.BlockState bs : bsc.getValidStates()) {
             	switch (bs.getRenderType()) {
             		case MODEL:
             			uses_model = true;
@@ -679,8 +675,8 @@ public class DynmapBlockScanPlugin
         }
        
     	// Loop over the images for the element
-    	for (Entry<EnumFacing, BlockFace> face : element.faces.entrySet()) {
-    	    EnumFacing facing = face.getKey();
+    	for (Entry<Direction, BlockFace> face : element.faces.entrySet()) {
+    	    Direction facing = face.getKey();
     		BlockFace f = face.getValue();
     		BlockSide bs = faceToSide.get(facing);
     		if ((bs != null) && (f.texture != null)) {
@@ -788,8 +784,8 @@ public class DynmapBlockScanPlugin
             // Initialize to no texture for each side
             for (int v = 0; v < cuboididx.length; v++) cuboididx[v] = -1;
             // Loop over the images for the element
-            for (Entry<EnumFacing, BlockFace> face : be.faces.entrySet()) {
-                EnumFacing facing = face.getKey();
+            for (Entry<Direction, BlockFace> face : be.faces.entrySet()) {
+                Direction facing = face.getKey();
                 BlockFace f = face.getValue();
                 if (f.texture != null) {
                     TextureFile gtf = td.registerTexture(f.texture);
@@ -889,8 +885,8 @@ public class DynmapBlockScanPlugin
         int patchidx = 0;
         for (BlockElement be : elems) {
             // Loop over the images for the element
-            for (Entry<EnumFacing, BlockFace> face : be.faces.entrySet()) {
-                EnumFacing facing = face.getKey();
+            for (Entry<Direction, BlockFace> face : be.faces.entrySet()) {
+                Direction facing = face.getKey();
                 BlockFace f = face.getValue();
                 BlockSide bs = faceToSide.get(facing);
                 if ((bs != null) && (f.texture != null)) {
@@ -925,7 +921,7 @@ public class DynmapBlockScanPlugin
         }
     }
     
-    private String addPatch(PatchBlockModel mod, EnumFacing facing, BlockElement be) {
+    private String addPatch(PatchBlockModel mod, Direction facing, BlockElement be) {
         // First, do the rotation on the from/to
         Vector3D fromvec = new Vector3D(be.from[0], be.from[1], be.from[2]);
         Vector3D tovec = new Vector3D(be.to[0], be.to[1], be.to[2]);
@@ -1080,7 +1076,7 @@ public class DynmapBlockScanPlugin
         return null;
     }
     
-    public Map<String, List<String>> buildPropoertMap(net.minecraft.state.StateContainer<Block, IBlockState> bsc) {
+    public Map<String, List<String>> buildPropoertMap(net.minecraft.state.StateContainer<Block, net.minecraft.block.BlockState> bsc) {
     	Map<String, List<String>> renderProperties = new HashMap<String, List<String>>();
 		// Build table of render properties and valid values
 		for (IProperty<?> p : bsc.getProperties()) {
@@ -1099,8 +1095,8 @@ public class DynmapBlockScanPlugin
 		return renderProperties;
     }
     
-    // Build ImmutableMap<String, String> from properties in IBlockState
-    public ImmutableMap<String, String> fromIBlockState(IBlockState bs) {
+    // Build ImmutableMap<String, String> from properties in BlockState
+    public ImmutableMap<String, String> fromBlockState(net.minecraft.block.BlockState bs) {
     	ImmutableMap.Builder<String,String> bld = ImmutableMap.builder();
     	for (IProperty<?> x : bs.getProperties()) {
     	    Object v = bs.get(x);

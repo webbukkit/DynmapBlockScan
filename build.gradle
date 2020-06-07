@@ -8,6 +8,8 @@ buildscript {
      maven { url "https://hub.spigotmc.org/nexus/content/repositories/snapshots/" }
      maven { url "https://repo.codemc.org/repository/maven-public/" }
      maven { url = 'https://files.minecraftforge.net/maven' }
+     jcenter()
+     mavenCentral()     
     }
     dependencies {
         classpath group: 'net.minecraftforge.gradle', name: 'ForgeGradle', version: '3.+', changing: true
@@ -35,11 +37,11 @@ ext.buildNumber = System.getenv().BUILD_NUMBER ?: "Dev"
 
 dependencies {
     compile group: 'us.dynmap', name: 'DynmapCoreAPI', version: "${config.Dynmap_version}${config.DynmapCore_devversion}", ext: 'jar'
-    minecraft 'net.minecraftforge:forge:1.13.2-25.0.219'
+    minecraft 'net.minecraftforge:forge:1.14.4-28.2.18'
 }
 
 minecraft {
-	mappings channel: 'stable', version: project.config.mapping_version
+    mappings channel: 'snapshot', version: '20190719-1.14.3'
     runs {
         server {
             workingDirectory project.file('run').canonicalPath
@@ -67,7 +69,7 @@ processResources
         // replace version and mcversion
         expand(
         	version: project.version + '-' + project.ext.buildNumber,
-        	mcversion: "1.13.2"
+        	mcversion: "1.14.4"
     	)
     }
         
