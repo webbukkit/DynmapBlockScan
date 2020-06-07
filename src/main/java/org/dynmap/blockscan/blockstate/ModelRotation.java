@@ -45,7 +45,7 @@ public enum ModelRotation {
         this.quartersY = Math.abs(y / 90);
         facemap = new EnumFacing[6];
         facerot = new int[6];
-        for (EnumFacing f : EnumFacing.VALUES) {
+        for (EnumFacing f : EnumFacing.values()) {
         	facemap[f.getIndex()] = f;
         	facerot[f.getIndex()] = 0;
         }
@@ -62,7 +62,7 @@ public enum ModelRotation {
         int[] newrot = new int[6];
         for (int i = 0; i < 6; i++) {
             EnumFacing f = facemap[i];
-            newface[f.getIndex()] = EnumFacing.VALUES[i];
+            newface[f.getIndex()] = EnumFacing.values()[i];
             newrot[f.getIndex()] = facerot[i];
         }
         facemap = newface;

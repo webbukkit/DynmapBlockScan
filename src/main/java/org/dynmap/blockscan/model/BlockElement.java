@@ -17,7 +17,6 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParseException;
 
-import jline.internal.Log;
 import net.minecraft.util.EnumFacing;
 
 // Container for parsed JSON elements from block model
@@ -103,7 +102,7 @@ public class BlockElement {
     		return false;
     	}
     	// Number of faces
-    	for (EnumFacing f : EnumFacing.VALUES) {
+    	for (EnumFacing f : EnumFacing.values()) {
     		BlockFace ff = faces.get(f);
     		if ((ff == null) || (ff.isFullFace() == false)) {
     			return false;

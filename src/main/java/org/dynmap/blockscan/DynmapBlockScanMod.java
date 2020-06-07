@@ -4,88 +4,76 @@ import java.io.File;
 import java.util.Map;
 
 import net.minecraft.server.MinecraftServer;
-import net.minecraftforge.common.config.Configuration;
+import net.minecraftforge.common.MinecraftForge;
+import net.minecraftforge.eventbus.api.SubscribeEvent;
+import net.minecraftforge.fml.DistExecutor;
+import net.minecraftforge.fml.ModList;
 import net.minecraftforge.fml.common.Mod;
-import net.minecraftforge.fml.common.Mod.EventHandler;
-import net.minecraftforge.fml.common.Mod.Instance;
-import net.minecraftforge.fml.common.SidedProxy;
-import net.minecraftforge.fml.common.event.FMLInitializationEvent;
-import net.minecraftforge.fml.common.event.FMLPostInitializationEvent;
-import net.minecraftforge.fml.common.event.FMLPreInitializationEvent;
-import net.minecraftforge.fml.common.event.FMLServerStartedEvent;
-import net.minecraftforge.fml.common.event.FMLServerStartingEvent;
-import net.minecraftforge.fml.common.event.FMLServerStoppingEvent;
-import net.minecraftforge.fml.common.network.NetworkCheckHandler;
-import net.minecraftforge.fml.relauncher.Side;
+import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
+import net.minecraftforge.fml.event.server.FMLServerStartedEvent;
+import net.minecraftforge.fml.event.server.FMLServerStartingEvent;
+import net.minecraftforge.fml.event.server.FMLServerStoppingEvent;
+import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 
-@Mod(modid = "dynmapblockscan", name = "DynmapBlockScan", version = Version.VER)
+@Mod("dynmapblockscan")
 public class DynmapBlockScanMod
 {
     public static DynmapBlockScanPlugin.OurLog logger = new DynmapBlockScanPlugin.OurLog();
     // The instance of your mod that Forge uses.
-    @Instance("dynmapblockscan")
     public static DynmapBlockScanMod instance;
 
     // Says where the client and server 'proxy' code is loaded.
-    @SidedProxy(clientSide = "org.dynmap.blockscan.ClientProxy", serverSide = "org.dynmap.blockscan.Proxy")
-    public static Proxy proxy;
+    public static Proxy proxy = DistExecutor.runForDist(() -> ClientProxy::new, () -> Proxy::new);
     
     public static DynmapBlockScanPlugin plugin;
     public static File jarfile;
     public static boolean verboselogging = false;
     
     public DynmapBlockScanMod() {
+        instance = this;
+        FMLJavaModLoadingContext.get().getModEventBus().addListener(this::setup);
+
+        MinecraftForge.EVENT_BUS.register(this);
     }
     
-    @EventHandler
-    public void preInit(FMLPreInitializationEvent event)
-    {
-        jarfile = event.getSourceFile();
+    public void setup(final FMLCommonSetupEvent event) {
+        jarfile = ModList.get().getModFileById("dynmapblockscan").getFile().getFilePath().toFile();
+
         // Load configuration file - use suggested (config/DynmapBlockScan.cfg)
-        Configuration cfg = new Configuration(event.getSuggestedConfigurationFile());
-        try {
-            cfg.load();
-            
-           verboselogging = cfg.get("Settings",  "verboselog", false).getBoolean(false);
-        }
-        finally
-        {
-            cfg.save();
-        }
-    }
-
-    @EventHandler
-    public void init(FMLInitializationEvent event)
-    {
-    }
-
-    @EventHandler
-    public void postInit(FMLPostInitializationEvent event)
-    {
+//        Configuration cfg = new Configuration(event.getSuggestedConfigurationFile());
+//        try {
+//            cfg.load();
+//            
+//           verboselogging = cfg.get("Settings",  "verboselog", false).getBoolean(false);
+//        }
+//        finally
+//        {
+//            cfg.save();
+//        }
     }
 
     private MinecraftServer server;
-    @EventHandler
-    public void serverStarting(FMLServerStartingEvent event) {
+
+    @SubscribeEvent
+    public void onServerStarting(FMLServerStartingEvent event) {
         server = event.getServer();
         if(plugin == null)
             plugin = proxy.startServer(server);
         plugin.serverStarting();
     }
     
-    @EventHandler
-    public void serverStarted(FMLServerStartedEvent event)
-    {
+    @SubscribeEvent
+    public void onServerStarted(FMLServerStartedEvent event) {
         plugin.serverStarted();
     }
-    @EventHandler
-    public void serverStopping(FMLServerStoppingEvent event)
-    {
+    
+    @SubscribeEvent
+    public void serverStopping(FMLServerStoppingEvent event) {
     	proxy.stopServer(plugin);
     	plugin = null;
     }
-    @NetworkCheckHandler
-    public boolean netCheckHandler(Map<String, String> mods, Side side) {
-        return true;
-    }    
+//    @NetworkCheckHandler
+//    public boolean netCheckHandler(Map<String, String> mods, Side side) {
+//        return true;
+//    }    
 }

@@ -12,10 +12,12 @@ import java.util.Collections;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Optional;
 import java.util.zip.ZipFile;
 import java.util.zip.ZipEntry;
 import java.util.Set;
@@ -63,8 +65,6 @@ import com.google.gson.JsonSyntaxException;
 import com.google.gson.stream.JsonReader;
 import com.google.gson.stream.MalformedJsonException;
 
-import jline.internal.Log;
-
 import org.dynmap.blockscan.statehandlers.DoorStateHandler;
 import org.dynmap.blockscan.statehandlers.ForgeStateContainer;
 import org.dynmap.blockscan.statehandlers.RedstoneWireStateHandler;
@@ -73,15 +73,20 @@ import org.dynmap.blockscan.statehandlers.NSEWConnectedMetadataStateHandler;
 import org.dynmap.blockscan.statehandlers.GateMetadataStateHandler;
 
 import net.minecraft.block.Block;
-import net.minecraft.block.properties.IProperty;
-import net.minecraft.block.state.BlockStateContainer;
 import net.minecraft.block.state.IBlockState;
 import net.minecraft.server.MinecraftServer;
+import net.minecraft.state.IProperty;
 import net.minecraft.util.EnumFacing;
 import net.minecraft.util.IStringSerializable;
+import net.minecraft.util.ObjectIntIdentityMap;
 import net.minecraft.util.ResourceLocation;
-import net.minecraftforge.fml.common.Loader;
-import net.minecraftforge.fml.common.ModContainer;
+import net.minecraft.world.chunk.BlockStateContainer;
+import net.minecraftforge.fml.ModContainer;
+import net.minecraftforge.fml.ModList;
+import net.minecraftforge.fml.ModLoader;
+import net.minecraftforge.fml.loading.moddiscovery.ModFile;
+import net.minecraftforge.fml.loading.moddiscovery.ModFileInfo;
+import net.minecraftforge.fml.loading.moddiscovery.ModInfo;
 
 public class DynmapBlockScanPlugin
 {
@@ -216,10 +221,14 @@ public class DynmapBlockScanPlugin
     
     public void buildAssetMap() {
     	assetmap = new HashMap<String, PathElement>();
-        List<ModContainer> mcl = Loader.instance().getModList();
-        for (ModContainer mc : mcl) {
+        List<ModInfo> mcl = ModList.get().getMods();
+        for (ModInfo mc : mcl) {
         	String mid = mc.getModId().toLowerCase();
-        	File src = mc.getSource();
+        	ModFileInfo mfi = mc.getOwningFile();
+        	if (mfi == null) continue;
+        	ModFile mf = mfi.getFile();
+        	if (mf == null) continue;
+        	File src = mf.getFilePath().toFile();
         	if (src.isFile() && src.canRead()) {	// Is in Jar?
         		ZipFile zf = null;
         		int cnt = 0;
@@ -279,8 +288,8 @@ public class DynmapBlockScanPlugin
         	overrides = new BlockStateOverrides();
         }
         // Scan other modules for block overrides
-        for (Entry<String, ModContainer> mod : Loader.instance().getIndexedModList().entrySet()) {
-            InputStream str = openAssetResource(mod.getKey(), "dynmap", "blockstateoverrides.json", true);
+        for (ModInfo mod : ModList.get().getMods()) {
+            InputStream str = openAssetResource(mod.getModId(), "dynmap", "blockstateoverrides.json", true);
             if (str != null) {
                 Reader rdr = new InputStreamReader(str, Charsets.UTF_8);
                 GsonBuilder gb = new GsonBuilder(); // Start with builder
@@ -292,12 +301,12 @@ public class DynmapBlockScanPlugin
                     BlockStateOverrides modoverrides = parse.fromJson(jrdr, BlockStateOverrides.class);
                     if (modoverrides != null) {
                         overrides.merge(modoverrides);
-                        logger.info("Loaded dynmap overrides from " + mod.getKey());
+                        logger.info("Loaded dynmap overrides from " + mod.getModId());
                     }
                 } catch (JsonIOException iox) {
-                    logger.severe("Error reading dynmap overrides from " + mod.getKey(), iox);
+                    logger.severe("Error reading dynmap overrides from " + mod.getModId(), iox);
                 } catch (JsonSyntaxException sx) {
-                    logger.severe("Error parsing dynmap overrides from " + mod.getKey(), sx);
+                    logger.severe("Error parsing dynmap overrides from " + mod.getModId(), sx);
                 } finally {
                     if (str != null) { try { str.close(); } catch (IOException iox) {} }
                 }
@@ -310,11 +319,17 @@ public class DynmapBlockScanPlugin
         // Now process models from block records
         Map<String, BlockModel> models = new HashMap<String, BlockModel>();
         
+        ObjectIntIdentityMap<IBlockState> bsids = Block.BLOCK_STATE_IDS;
+        Block baseb = null;
+        Iterator<IBlockState> iter = bsids.iterator();
         // Scan blocks and block states
-        for (Block b : Block.REGISTRY) {
+        while (iter.hasNext()) {
+            IBlockState blkstate = iter.next();
+            Block b = blkstate.getBlock();
+            if (b == baseb) { continue; }
             ResourceLocation rl = b.getRegistryName();
             //logger.info(String.format("Block %s: %d", rl, Block.getIdFromBlock(b)));
-            BlockStateContainer bsc = b.getBlockState();
+            net.minecraft.state.StateContainer<Block, IBlockState> bsc = b.getStateContainer();
             // See if any of the block states use MODEL
             boolean uses_model = false;
             boolean uses_nonmodel = false;
@@ -333,11 +348,11 @@ public class DynmapBlockScanPlugin
                         if (DynmapBlockScanMod.verboselogging)
                    			logger.info(String.format("%s: Animated block - needs to be handled specially", rl));
             			break;
-            		case LIQUID:
-            			uses_nonmodel = true;
-                        if (DynmapBlockScanMod.verboselogging)
-                            logger.info(String.format("%s: Liquid block - special handling", rl));
-            			break;
+//            		case LIQUID:
+//            			uses_nonmodel = true;
+//                        if (DynmapBlockScanMod.verboselogging)
+//                            logger.info(String.format("%s: Liquid block - special handling", rl));
+//            			break;
             	}
             }
             // Not model block - nothing else to do yet
@@ -350,7 +365,7 @@ public class DynmapBlockScanPlugin
             // Generate property value map
             Map<String, List<String>> propMap = buildPropoertMap(bsc);
             // Try to find blockstate file
-            BlockState blockstate = loadBlockState(rl.getResourceDomain(), rl.getResourcePath(), overrides, propMap);
+            BlockState blockstate = loadBlockState(rl.getNamespace(), rl.getPath(), overrides, propMap);
             // Build block record
             BlockRecord br = new BlockRecord();
             // Process blockstate
@@ -360,7 +375,7 @@ public class DynmapBlockScanPlugin
         	// Build generic block state container for block
         	br.sc = new ForgeStateContainer(b, br.renderProps, propMap);
         	if (blockstate != null) {
-                BlockStateOverride ovr = overrides.getOverride(rl.getResourceDomain(), rl.getResourcePath());
+                BlockStateOverride ovr = overrides.getOverride(rl.getNamespace(), rl.getPath());
             	br.varList = new HashMap<StateRec, List<VariantList>>();
         		// Loop through rendering states in state container
         		for (StateRec sr : br.sc.getValidStates()) {
@@ -401,10 +416,7 @@ public class DynmapBlockScanPlugin
         					if (va.model != null) {
         						String[] tok = va.model.split(":");
         						if (tok.length == 1) {
-        							tok = new String[] { "minecraft", "block/" + tok[0] };
-        						}
-        						else {
-        							tok[1] = "block/" + tok[1];
+        							tok = new String[] { "minecraft", tok[0] };
         						}
         						String modid = tok[0] + ":" + tok[1];
         						BlockModel mod = models.get(modid);	// See if we have it
@@ -1046,14 +1058,20 @@ public class DynmapBlockScanPlugin
     	}
     	return is;
     }
+    static boolean once = false;
     public static InputStream openResource(String modid, String rname) {
+        if (modid.equals("minecraft")) modid = "dynmapblockscan";   // We supply resources (1.13.2 doesn't have assets in server jar)
         String rname_lc = rname.toLowerCase();
-        ModContainer mc = Loader.instance().getIndexedModList().get(modid);
-        Object mod = (mc != null)?mc.getMod():null;
+        Optional<? extends ModContainer> mc = ModList.get().getModContainerById(modid);
+        Object mod = (mc.isPresent())?mc.get().getMod():null;
+        ClassLoader cl = MinecraftServer.class.getClassLoader();
         if (mod != null) {
-            InputStream is = mod.getClass().getClassLoader().getResourceAsStream(rname);
+            cl = mod.getClass().getClassLoader();
+        }
+        if (cl != null) {
+            InputStream is = cl.getResourceAsStream(rname_lc);
             if (is == null) {
-                is = mod.getClass().getClassLoader().getResourceAsStream(rname_lc);
+                is = cl.getResourceAsStream(rname);
             }
             if (is != null) {
                 return is;
@@ -1062,7 +1080,7 @@ public class DynmapBlockScanPlugin
         return null;
     }
     
-    public Map<String, List<String>> buildPropoertMap(BlockStateContainer bsc) {
+    public Map<String, List<String>> buildPropoertMap(net.minecraft.state.StateContainer<Block, IBlockState> bsc) {
     	Map<String, List<String>> renderProperties = new HashMap<String, List<String>>();
 		// Build table of render properties and valid values
 		for (IProperty<?> p : bsc.getProperties()) {
@@ -1084,13 +1102,13 @@ public class DynmapBlockScanPlugin
     // Build ImmutableMap<String, String> from properties in IBlockState
     public ImmutableMap<String, String> fromIBlockState(IBlockState bs) {
     	ImmutableMap.Builder<String,String> bld = ImmutableMap.builder();
-    	for (Entry<IProperty<?>, Comparable<?>> x : bs.getProperties().entrySet()) {
-    		Comparable<?> v = x.getValue();
+    	for (IProperty<?> x : bs.getProperties()) {
+    	    Object v = bs.get(x);
     		if (v instanceof IStringSerializable) {
-    			bld.put(x.getKey().getName(), ((IStringSerializable)v).getName());
+    			bld.put(x.getName(), ((IStringSerializable)v).getName());
     		}
     		else {
-    			bld.put(x.getKey().getName(), v.toString());
+    			bld.put(x.getName(), v.toString());
     		}
     	}
     	return bld.build();
@@ -1108,7 +1126,7 @@ public class DynmapBlockScanPlugin
     	else if (ovr.baseNameProperty != null) {	// MUltiple files based on base property
     		List<String> vals = propMap.get(ovr.baseNameProperty);	// Look up defned values
     		if (vals == null) {
-    			Log.error(String.format("%s:%s : bad baseNameProperty=%s",  modid, respath, ovr.baseNameProperty));;
+    			logger.warning(String.format("%s:%s : bad baseNameProperty=%s",  modid, respath, ovr.baseNameProperty));;
     			return null;
     		}
     		BlockState bs = new BlockState();

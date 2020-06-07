@@ -1,23 +1,21 @@
+
 buildscript {
     repositories {
-        mavenCentral()
-        mavenLocal()
-        
-        maven {
-            name = "forgeFS"
-            url = "http://files.minecraftforge.net/maven"
-        }
-        maven {
-            name = "sonatype"
-            url = "https://oss.sonatype.org/content/repositories/snapshots/"
-        }
+     mavenLocal()
+     maven { url "https://oss.sonatype.org/content/repositories/releases" }
+     maven { url "http://repo.mikeprimm.com" }
+     maven { url "https://repo.maven.apache.org/maven2" }
+     maven { url "https://hub.spigotmc.org/nexus/content/repositories/snapshots/" }
+     maven { url "https://repo.codemc.org/repository/maven-public/" }
+     maven { url = 'https://files.minecraftforge.net/maven' }
     }
     dependencies {
-        classpath 'net.minecraftforge.gradle:ForgeGradle:2.3-SNAPSHOT'
+        classpath group: 'net.minecraftforge.gradle', name: 'ForgeGradle', version: '3.+', changing: true
     }
 }
 
-apply plugin: 'net.minecraftforge.gradle.forge'
+apply plugin: 'net.minecraftforge.gradle'
+apply plugin: 'eclipse'
 
 // define the properties file
 ext.configFile = file "build.properties"
@@ -28,20 +26,25 @@ configFile.withReader {
     project.ext.config = new ConfigSlurper().parse prop
 }
 
-version = "${config.Dynmap_version}${config.Dynmap_extversion}"
+version = project.config.Dynmap_version + project.config.Dynmap_extversion
 group= "us.dynmap.forge" // http://maven.apache.org/guides/mini/guide-naming-conventions.html
 archivesBaseName = "DynmapBlockScan"
 targetCompatibility = '1.8'
 sourceCompatibility = '1.8'
 ext.buildNumber = System.getenv().BUILD_NUMBER ?: "Dev"
 
+dependencies {
+    compile group: 'us.dynmap', name: 'DynmapCoreAPI', version: "${config.Dynmap_version}${config.DynmapCore_devversion}", ext: 'jar'
+    minecraft 'net.minecraftforge:forge:1.13.2-25.0.219'
+}
+
 minecraft {
-    version = config.minecraft_version + "-" + config.forge_version
-	runDir = "run"
-	mappings = project.config.mapping_version
-	replaceIn "Version.java"
-    	replace "@VERSION@", config.Dynmap_version + config.Dynmap_extversion + '-' + project.ext.buildNumber
-    	replace "@BUILD_NUMBER@", project.ext.buildNumber
+	mappings channel: 'stable', version: project.config.mapping_version
+    runs {
+        server {
+            workingDirectory project.file('run').canonicalPath
+        }
+	}
 }
 
 repositories {
@@ -53,29 +56,25 @@ configurations {
     compile.extendsFrom dynmap
 }
 
-dependencies {
-    dynmap group: 'us.dynmap', name: 'DynmapCoreAPI', version: "${config.Dynmap_version}${config.DynmapCore_devversion}", ext: 'jar'
-}
-
 processResources
 {
+    inputs.property "version", project.version + '-' + project.ext.buildNumber
+    
     // replace stuff in mcmod.info, nothing else
     from(sourceSets.main.resources.srcDirs) {
-        include 'mcmod.info'
+        include 'META-INF/mods.toml'
                 
         // replace version and mcversion
         expand(
-        	version: config.Dynmap_version + config.Dynmap_extversion + '-' + project.ext.buildNumber,
-        	mcversion: config.minecraft_version
+        	version: project.version + '-' + project.ext.buildNumber,
+        	mcversion: "1.13.2"
     	)
     }
         
     // copy everything else, thats not the mcmod.info
     from(sourceSets.main.resources.srcDirs) {
-        exclude 'mcmod.info'
+        exclude 'META-INF/mods.toml'
     }
-    // Move access transformer to META-INF
-    rename '(.+_at.cfg)', 'META-INF/$1'
 }
 
 jar {

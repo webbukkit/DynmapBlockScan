@@ -5,7 +5,7 @@
   "description": "Dynamically generate block definitions for Dynmap",
   "version": "${version}",
   "mcversion": "${mcversion}",
-  "url": "http://www.minecraftforum.net/topic/1543523-dynmap-dynmap-web-maps-for-minecraft/",
+  "url": "https://reddit.com/r/Dynmap",
   "updateUrl": "",
   "authors": [
     "mikeprimm"
