@@ -37,11 +37,11 @@ ext.buildNumber = System.getenv().BUILD_NUMBER ?: "Dev"
 
 dependencies {
     compile group: 'us.dynmap', name: 'DynmapCoreAPI', version: "${config.Dynmap_version}${config.DynmapCore_devversion}", ext: 'jar'
-    minecraft 'net.minecraftforge:forge:1.14.4-28.2.18'
+    minecraft 'net.minecraftforge:forge:1.15.2-31.2.9'
 }
 
 minecraft {
-    mappings channel: 'snapshot', version: '20190719-1.14.3'
+	mappings channel: 'snapshot', version: '20200514-1.15.1'
     runs {
         server {
             workingDirectory project.file('run').canonicalPath
@@ -69,7 +69,7 @@ processResources
         // replace version and mcversion
         expand(
         	version: project.version + '-' + project.ext.buildNumber,
-        	mcversion: "1.14.4"
+        	mcversion: "1.15.2"
     	)
     }
         
