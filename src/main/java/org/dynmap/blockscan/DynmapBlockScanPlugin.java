@@ -73,7 +73,6 @@ import org.dynmap.blockscan.statehandlers.GateMetadataStateHandler;
 
 import net.minecraft.block.Block;
 import net.minecraft.server.MinecraftServer;
-import net.minecraft.state.IProperty;
 import net.minecraft.util.Direction;
 import net.minecraft.util.IStringSerializable;
 import net.minecraft.util.ObjectIntIdentityMap;
@@ -88,17 +87,17 @@ public class DynmapBlockScanPlugin
 {
     public static OurLog logger = new OurLog();
     public static DynmapBlockScanPlugin plugin;
-    
+
     private Map<Direction, BlockSide> faceToSide = new HashMap<Direction, BlockSide>();
     private BlockStateOverrides overrides;
-    
+
     public static class BlockRecord {
     	public StateContainer sc;
     	public Map<StateRec, List<VariantList>> varList;	// Model references for block
     	public Set<String> renderProps;	// Set of render properties
     	public IStateHandler handler;		// Best handler
     }
-    
+
     private IStateHandlerFactory[] state_handler = {
         new NSEWConnectedMetadataStateHandler(),
         new NSEWUConnectedMetadataStateHandler(),
@@ -116,7 +115,7 @@ public class DynmapBlockScanPlugin
     public DynmapBlockScanPlugin(MinecraftServer srv)
     {
         plugin = this;
-        
+
         faceToSide.put(Direction.DOWN, BlockSide.FACE_0);
         faceToSide.put(Direction.UP, BlockSide.FACE_1);
         faceToSide.put(Direction.NORTH, BlockSide.FACE_2);
@@ -140,10 +139,10 @@ public class DynmapBlockScanPlugin
     	PathDirectory(String mid) {
     		super(mid);
     	}
-    	
+
     }
     private static Map<String, PathElement> assetmap;	// Map of asset paths and mods containing them
-    
+
     private void addElement(String modid, String n) {
     	String[] tok = n.split("/");
     	PathElement pe;
@@ -199,7 +198,7 @@ public class DynmapBlockScanPlugin
     	}
     	return m.get(tok[tok.length - 1]);
     }
-    
+
     private static String scanForElement(Map<String, PathElement> m, String base, String fname) {
     	for (Entry<String, PathElement> me : m.entrySet()) {
     		PathElement p = me.getValue();
@@ -214,7 +213,7 @@ public class DynmapBlockScanPlugin
     	}
     	return null;
     }
-    
+
     public void buildAssetMap() {
     	assetmap = new HashMap<String, PathElement>();
         List<ModInfo> mcl = ModList.get().getMods();
@@ -255,7 +254,7 @@ public class DynmapBlockScanPlugin
         	}
         }
     }
-    
+
     public void onEnable() {
     }
     public void onDisable() {
@@ -314,7 +313,7 @@ public class DynmapBlockScanPlugin
 
         // Now process models from block records
         Map<String, BlockModel> models = new HashMap<String, BlockModel>();
-        
+
         ObjectIntIdentityMap<net.minecraft.block.BlockState> bsids = Block.BLOCK_STATE_IDS;
         Block baseb = null;
         Iterator<net.minecraft.block.BlockState> iter = bsids.iterator();
@@ -401,7 +400,7 @@ public class DynmapBlockScanPlugin
             }
             blockRecords.put(rl.toString(), br);
         }
-        
+
         logger.info("Loading models....");
         for (String blkname : blockRecords.keySet()) {
         	BlockRecord br = blockRecords.get(blkname);
@@ -489,20 +488,20 @@ public class DynmapBlockScanPlugin
         	}
         }
         logger.info("Elements generated");
-        
+
         publishDynmapModData();
-        
+
         assetmap = null;
     }
-    
+
     private ModSupportAPI dynmap_api;
-    
+
     private static class ModDynmapRec {
     	ModTextureDefinition txtDef;
     	ModModelDefinition modDef;
     	Map<String, TextureFile> textureIDsByPath = new HashMap<String, TextureFile>();
     	int nextTxtID = 1;
-    	
+
     	public TextureFile registerTexture(String txtpath) {
     	    txtpath = txtpath.toLowerCase();
     		TextureFile txtf = textureIDsByPath.get(txtpath);
@@ -578,7 +577,7 @@ public class DynmapBlockScanPlugin
         }
     }
     private Map<String, ModDynmapRec> modTextureDef = new HashMap<String, ModDynmapRec>();
-    
+
     private ModDynmapRec getModRec(String modid) {
         if (dynmap_api == null) {
             dynmap_api = ModSupportAPI.getAPI();
@@ -621,7 +620,7 @@ public class DynmapBlockScanPlugin
         }
         return meta;
     }
-        
+
     public void registerSimpleDynmapCubes(String blkname, StateRec state, BlockElement element, WellKnownBlockClasses type) {
     	String[] tok = blkname.split(":");
     	String modid = tok[0];
@@ -631,7 +630,7 @@ public class DynmapBlockScanPlugin
     		return;
     	}
         // Temporary hack to avoid registering metadata duplicates
-    	meta = pruneDuplicateMeta(blkname, meta); 
+    	meta = pruneDuplicateMeta(blkname, meta);
     	if (meta.length == 0) {
             return;
         }
@@ -673,7 +672,7 @@ public class DynmapBlockScanPlugin
                 btr.setBlockColorMapTexture(gtf);
             }
         }
-       
+
     	// Loop over the images for the element
     	for (Entry<Direction, BlockFace> face : element.faces.entrySet()) {
     	    Direction facing = face.getKey();
@@ -710,7 +709,7 @@ public class DynmapBlockScanPlugin
         }
         return true;
     }
-    
+
     public void registerSimpleDynmapCuboids(String blkname, StateRec state, List<BlockElement> elems, WellKnownBlockClasses type) {
         String[] tok = blkname.split(":");
         String modid = tok[0];
@@ -720,7 +719,7 @@ public class DynmapBlockScanPlugin
             return;
         }
         // Temporary hack to avoid registering metadata duplicates
-        meta = pruneDuplicateMeta(blkname, meta); 
+        meta = pruneDuplicateMeta(blkname, meta);
         if (meta.length == 0) {
             return;
         }
@@ -824,7 +823,7 @@ public class DynmapBlockScanPlugin
             return;
         }
         // Temporary hack to avoid registering metadata duplicates
-        meta = pruneDuplicateMeta(blkname, meta); 
+        meta = pruneDuplicateMeta(blkname, meta);
         if (meta.length == 0) {
             return;
         }
@@ -920,7 +919,7 @@ public class DynmapBlockScanPlugin
             }
         }
     }
-    
+
     private String addPatch(PatchBlockModel mod, Direction facing, BlockElement be) {
         // First, do the rotation on the from/to
         Vector3D fromvec = new Vector3D(be.from[0], be.from[1], be.from[2]);
@@ -1012,7 +1011,7 @@ public class DynmapBlockScanPlugin
         return mod.addPatch(originvec.x, originvec.y, originvec.z, uvec.x, uvec.y, uvec.z, vvec.x, vvec.y, vvec.z, SideVisible.TOP);
     }
 
-    
+
     public void publishDynmapModData() {
     	for (ModDynmapRec mod : modTextureDef.values()) {
     		if (mod.txtDef != null) {
@@ -1024,9 +1023,9 @@ public class DynmapBlockScanPlugin
                 logger.info("Published " + mod.modDef.getModID() + " models to Dynmap");
             }
     	}
-    
+
     }
-    
+
     public static InputStream openAssetResource(String modid, String subpath, String resourcepath, boolean scan) {
     	String pth = "assets/" + modid + "/" + subpath + "/" + resourcepath;
     	PathElement pe = findElement(assetmap, pth);
@@ -1075,11 +1074,11 @@ public class DynmapBlockScanPlugin
         }
         return null;
     }
-    
+§
     public Map<String, List<String>> buildPropoertMap(net.minecraft.state.StateContainer<Block, net.minecraft.block.BlockState> bsc) {
     	Map<String, List<String>> renderProperties = new HashMap<String, List<String>>();
 		// Build table of render properties and valid values
-		for (IProperty<?> p : bsc.getProperties()) {
+		for (net.minecraft.state.Property<?> p : bsc.getProperties()) {
 			String pn = p.getName();
 			ArrayList<String> pvals = new ArrayList<String>();
 			for (Comparable<?> val : p.getAllowedValues()) {
@@ -1094,11 +1093,12 @@ public class DynmapBlockScanPlugin
 		}
 		return renderProperties;
     }
-    
+
     // Build ImmutableMap<String, String> from properties in BlockState
     public ImmutableMap<String, String> fromBlockState(net.minecraft.block.BlockState bs) {
     	ImmutableMap.Builder<String,String> bld = ImmutableMap.builder();
-    	for (IProperty<?> x : bs.getProperties()) {
+      // func_235904_r_ == getProperties
+    	for (net.minecraft.state.Property<?> x : bs.func_235904_r_()) {
     	    Object v = bs.get(x);
     		if (v instanceof IStringSerializable) {
     			bld.put(x.getName(), ((IStringSerializable)v).getName());
@@ -1109,10 +1109,10 @@ public class DynmapBlockScanPlugin
     	}
     	return bld.build();
     }
-    
+
     private static BlockState loadBlockState(String modid, String respath, BlockStateOverrides override, Map<String, List<String>> propMap) {
     	BlockStateOverride ovr = override.getOverride(modid, respath);
-    	
+
     	if (ovr == null) {	// No override
     		return loadBlockStateFile(modid, respath);
     	}
@@ -1139,14 +1139,14 @@ public class DynmapBlockScanPlugin
 
 		return null;
     }
-    
+
     private static BlockState loadBlockStateFile(String modid, String respath) {
     	// Default path
         String path = "assets/" + modid + "/blockstates/" + respath + ".json";
     	BlockState bs = null;
         InputStream is = openAssetResource(modid, "blockstates", respath + ".json", true);
         if (is == null) {	// Not found? scan for name under blockstates directory (some mods do this...)
-        	
+
         }
         if (is != null) {	// Found it?
         	Reader rdr = new InputStreamReader(is, Charsets.UTF_8);
@@ -1171,7 +1171,7 @@ public class DynmapBlockScanPlugin
         }
         return bs;
     }
-    
+
     private static BlockModel loadBlockModelFile(String modid, String respath) {
         String path = "assets/" + modid + "/models/" + respath + ".json";
     	BlockModel bs = null;
@@ -1201,7 +1201,7 @@ public class DynmapBlockScanPlugin
         }
         return bs;
     }
-    
+
     public static class OurLog {
         Logger log;
         public static final String DM = "";
@@ -1234,4 +1234,3 @@ public class DynmapBlockScanPlugin
         }
     }
 }
-
