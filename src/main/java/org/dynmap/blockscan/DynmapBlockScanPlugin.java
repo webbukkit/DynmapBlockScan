@@ -1074,7 +1074,7 @@ public class DynmapBlockScanPlugin
         }
         return null;
     }
-§
+
     public Map<String, List<String>> buildPropoertMap(net.minecraft.state.StateContainer<Block, net.minecraft.block.BlockState> bsc) {
     	Map<String, List<String>> renderProperties = new HashMap<String, List<String>>();
 		// Build table of render properties and valid values
