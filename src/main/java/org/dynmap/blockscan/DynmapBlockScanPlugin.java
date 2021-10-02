@@ -323,6 +323,7 @@ public class DynmapBlockScanPlugin
             net.minecraft.block.BlockState blkstate = iter.next();
             Block b = blkstate.getBlock();
             if (b == baseb) { continue; }
+            baseb = b;
             ResourceLocation rl = b.getRegistryName();
             //logger.info(String.format("Block %s: %d", rl, Block.getIdFromBlock(b)));
             net.minecraft.state.StateContainer<Block, net.minecraft.block.BlockState> bsc = b.getStateContainer();
