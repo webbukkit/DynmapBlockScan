@@ -34,12 +34,12 @@ sourceCompatibility = '1.8'
 ext.buildNumber = System.getenv().BUILD_NUMBER ?: "Dev"
 
 dependencies {
-    compile group: 'us.dynmap', name: 'DynmapCoreAPI', version: "${config.Dynmap_version}${config.DynmapCore_devversion}", ext: 'jar'
+    compile "us.dynmap:DynmapCoreAPI:${config.Dynmap_version}${config.Dynmap_extversion}:all"
     minecraft 'net.minecraftforge:forge:1.13.2-25.0.219'
 }
 
 minecraft {
-	mappings channel: 'stable', version: project.config.mapping_version
+	mappings channel: 'stable', version: '47-1.13.2'
     runs {
         server {
             workingDirectory project.file('run').canonicalPath
@@ -49,6 +49,7 @@ minecraft {
 
 repositories {
     mavenLocal()
+    maven { url "http://repo.mikeprimm.com" }
 }
 
 configurations {
