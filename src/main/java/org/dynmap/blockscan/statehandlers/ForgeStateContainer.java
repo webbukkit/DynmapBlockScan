@@ -8,24 +8,24 @@ import java.util.Set;
 
 import com.google.common.collect.ImmutableMap;
 
-import net.minecraft.block.Block;
-import net.minecraft.block.BlockState;
-import net.minecraft.block.BushBlock;
-import net.minecraft.block.CropsBlock;
-import net.minecraft.block.FlowerBlock;
-import net.minecraft.block.FlowingFluidBlock;
-import net.minecraft.block.GrassBlock;
-import net.minecraft.block.LeavesBlock;
-import net.minecraft.block.TallGrassBlock;
-import net.minecraft.block.VineBlock;
-import net.minecraft.state.Property;
-import net.minecraft.util.IStringSerializable;
+import net.minecraft.world.level.block.AirBlock;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.BushBlock;
+import net.minecraft.world.level.block.CropBlock;
+import net.minecraft.world.level.block.FlowerBlock;
+import net.minecraft.world.level.block.GrassBlock;
+import net.minecraft.world.level.block.LeavesBlock;
+import net.minecraft.world.level.block.LiquidBlock;
+import net.minecraft.world.level.block.TallGrassBlock;
+import net.minecraft.world.level.block.VineBlock;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.state.properties.Property;
 
 public class ForgeStateContainer extends StateContainer {
 
 	public ForgeStateContainer(Block blk, Set<String> renderprops, Map<String, List<String>> propMap) {
-		List<BlockState> bsl = blk.getStateContainer().getValidStates();
-		BlockState defstate = blk.getDefaultState();
+		List<BlockState> bsl = blk.getStateDefinition().getPossibleStates();
+		BlockState defstate = blk.defaultBlockState();
 		if (renderprops == null) {
 			renderprops = new HashSet<String>();
 			for (String pn : propMap.keySet()) {
@@ -47,10 +47,10 @@ public class ForgeStateContainer extends StateContainer {
 			for (Property<?> ent : bs.getProperties()) {
 				String pn = ent.getName();
 				if (renderprops.contains(pn)) {	// If valid render property
-					Comparable<?> v = bs.get(ent);
-					if (v instanceof IStringSerializable) {
-						v = ((IStringSerializable)v).toString();
-					}
+					Comparable<?> v = bs.getValue(ent);
+					//if (v instanceof IStringSerializable) {
+					//	v = ((IStringSerializable)v).toString();
+					//}
 					bld.put(pn, v.toString());
 				}
 			}
@@ -78,7 +78,7 @@ public class ForgeStateContainer extends StateContainer {
 		if (blk instanceof LeavesBlock) {
 		    type = WellKnownBlockClasses.LEAVES;
 		}
-		else if (blk instanceof CropsBlock) {
+		else if (blk instanceof CropBlock) {
             type = WellKnownBlockClasses.CROPS;
 		}
 		else if (blk instanceof FlowerBlock) {
@@ -96,7 +96,7 @@ public class ForgeStateContainer extends StateContainer {
         else if (blk instanceof GrassBlock) {
             type = WellKnownBlockClasses.GRASS;
         }
-        else if (blk instanceof FlowingFluidBlock) {
+        else if (blk instanceof LiquidBlock) {
             type = WellKnownBlockClasses.LIQUID;
         }
 	}

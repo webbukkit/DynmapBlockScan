@@ -71,19 +71,21 @@ import org.dynmap.blockscan.statehandlers.NSEWUConnectedMetadataStateHandler;
 import org.dynmap.blockscan.statehandlers.NSEWConnectedMetadataStateHandler;
 import org.dynmap.blockscan.statehandlers.GateMetadataStateHandler;
 
-import net.minecraft.block.Block;
+import net.minecraft.core.Direction;
+import net.minecraft.core.IdMapper;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
-import net.minecraft.state.Property;
-import net.minecraft.util.Direction;
-import net.minecraft.util.IStringSerializable;
-import net.minecraft.util.ObjectIntIdentityMap;
-import net.minecraft.util.ResourceLocation;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.state.StateDefinition;
+import net.minecraft.world.level.block.state.properties.Property;
 import net.minecraftforge.fml.ModContainer;
 import net.minecraftforge.fml.ModList;
-import net.minecraftforge.fml.common.registry.GameRegistry;
 import net.minecraftforge.fml.loading.moddiscovery.ModFile;
 import net.minecraftforge.fml.loading.moddiscovery.ModFileInfo;
 import net.minecraftforge.fml.loading.moddiscovery.ModInfo;
+import net.minecraftforge.forgespi.language.IModFileInfo;
+import net.minecraftforge.forgespi.language.IModInfo;
+import net.minecraftforge.forgespi.locating.IModFile;
 
 public class DynmapBlockScanPlugin
 {
@@ -218,12 +220,12 @@ public class DynmapBlockScanPlugin
     
     public void buildAssetMap() {
     	assetmap = new HashMap<String, PathElement>();
-        List<ModInfo> mcl = ModList.get().getMods();
-        for (ModInfo mc : mcl) {
+        List<IModInfo> mcl = ModList.get().getMods();
+        for (IModInfo mc : mcl) {
         	String mid = mc.getModId().toLowerCase();
-        	ModFileInfo mfi = mc.getOwningFile();
+        	IModFileInfo mfi = mc.getOwningFile();
         	if (mfi == null) continue;
-        	ModFile mf = mfi.getFile();
+        	IModFile mf = mfi.getFile();
         	if (mf == null) continue;
         	File src = mf.getFilePath().toFile();
         	if (src.isFile() && src.canRead()) {	// Is in Jar?
@@ -288,7 +290,7 @@ public class DynmapBlockScanPlugin
         }
     	logger.info("scan for overrides");
         // Scan other modules for block overrides
-        for (ModInfo mod : ModList.get().getMods()) {
+        for (IModInfo mod : ModList.get().getMods()) {
             InputStream str = openAssetResource(mod.getModId(), "dynmap", "blockstateoverrides.json", true);
             if (str != null) {
                 Reader rdr = new InputStreamReader(str, Charsets.UTF_8);
@@ -321,24 +323,24 @@ public class DynmapBlockScanPlugin
         // Now process models from block records
         Map<String, BlockModel> models = new HashMap<String, BlockModel>();
 
-        ObjectIntIdentityMap<net.minecraft.block.BlockState> bsids = Block.BLOCK_STATE_IDS;
+    	IdMapper<net.minecraft.world.level.block.state.BlockState> bsids = Block.BLOCK_STATE_REGISTRY;
         Block baseb = null;
         
-        Iterator<net.minecraft.block.BlockState> iter = bsids.iterator();
+        Iterator<net.minecraft.world.level.block.state.BlockState> iter = bsids.iterator();
         // Scan blocks and block states
         while (iter.hasNext()) {
-            net.minecraft.block.BlockState blkstate = iter.next();
+            net.minecraft.world.level.block.state.BlockState blkstate = iter.next();
             Block b = blkstate.getBlock();
             if (b == baseb) { continue; }
             baseb = b;
             ResourceLocation rl = b.getRegistryName();
             //logger.info(String.format("Block %s", rl.toString()));
-            net.minecraft.state.StateContainer<Block, net.minecraft.block.BlockState> bsc = b.getStateContainer();
+            StateDefinition<Block, net.minecraft.world.level.block.state.BlockState> bsc = b.getStateDefinition();
             // See if any of the block states use MODEL
             boolean uses_model = false;
             boolean uses_nonmodel = false;
-            for (net.minecraft.block.BlockState bs : bsc.getValidStates()) {
-            	switch (bs.getRenderType()) {
+            for (net.minecraft.world.level.block.state.BlockState bs : bsc.getPossibleStates()) {
+            	switch (bs.getRenderShape()) {
             		case MODEL:
             			uses_model = true;
             			break;
@@ -813,7 +815,7 @@ public class DynmapBlockScanPlugin
                         tm = TextureModifier.ROT270;
                         break;
                     }
-                    cuboididx[facing.getIndex()] = imgidx;
+                    cuboididx[facing.ordinal()] = imgidx;
                     btr.setPatchTexture(gtf, tm, imgidx);
                     imgidx++;
                 }
@@ -1084,19 +1086,19 @@ public class DynmapBlockScanPlugin
         return null;
     }
     
-    public Map<String, List<String>> buildPropoertMap(net.minecraft.state.StateContainer<Block, net.minecraft.block.BlockState> bsc) {
+    public Map<String, List<String>> buildPropoertMap(StateDefinition<Block, net.minecraft.world.level.block.state.BlockState> bsc) {
     	Map<String, List<String>> renderProperties = new HashMap<String, List<String>>();
 		// Build table of render properties and valid values
 		for (Property<?> p : bsc.getProperties()) {
 			String pn = p.getName();
 			ArrayList<String> pvals = new ArrayList<String>();
-			for (Comparable<?> val : p.getAllowedValues()) {
-				if (val instanceof IStringSerializable) {
-					pvals.add(((IStringSerializable)val).toString());
-				}
-				else {
+			for (Comparable<?> val : p.getPossibleValues()) {
+				//if (val instanceof IStringSerializable) {
+				//	pvals.add(((IStringSerializable)val).toString());
+				//}
+				//else {
 					pvals.add(val.toString());
-				}
+				//}
 			}
 			renderProperties.put(pn, pvals);
 		}
@@ -1104,16 +1106,16 @@ public class DynmapBlockScanPlugin
     }
     
     // Build ImmutableMap<String, String> from properties in BlockState
-    public ImmutableMap<String, String> fromBlockState(net.minecraft.block.BlockState bs) {
+    public ImmutableMap<String, String> fromBlockState(net.minecraft.world.level.block.state.BlockState bs) {
     	ImmutableMap.Builder<String,String> bld = ImmutableMap.builder();
     	for (Property<?> x : bs.getProperties()) {
-    	    Object v = bs.get(x);
-    		if (v instanceof IStringSerializable) {
-    			bld.put(x.getName(), ((IStringSerializable)v).toString());
-    		}
-    		else {
+    	    Object v = bs.getValue(x);
+    		//if (v instanceof IStringSerializable) {
+    		//	bld.put(x.getName(), ((IStringSerializable)v).toString());
+    		//}
+    		//else {
     			bld.put(x.getName(), v.toString());
-    		}
+    		//}
     	}
     	return bld.build();
     }

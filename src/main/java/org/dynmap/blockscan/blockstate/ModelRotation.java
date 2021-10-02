@@ -2,12 +2,12 @@ package org.dynmap.blockscan.blockstate;
 
 import com.google.common.collect.Maps;
 
+import net.minecraft.core.Direction;
+
 import java.util.Map;
 
 import org.dynmap.blockscan.util.Matrix3D;
 import org.dynmap.blockscan.util.Vector3D;
-
-import net.minecraft.util.Direction;
 
 public enum ModelRotation {
     X0_Y0(0, 0),
@@ -46,8 +46,8 @@ public enum ModelRotation {
         facemap = new Direction[6];
         facerot = new int[6];
         for (Direction f : Direction.values()) {
-        	facemap[f.getIndex()] = f;
-        	facerot[f.getIndex()] = 0;
+        	facemap[f.ordinal()] = f;
+        	facerot[f.ordinal()] = 0;
         }
         // Now rotate by number of quarters around X
         for (int i = 0; i < quartersX; i++) {
@@ -62,8 +62,8 @@ public enum ModelRotation {
         int[] newrot = new int[6];
         for (int i = 0; i < 6; i++) {
             Direction f = facemap[i];
-            newface[f.getIndex()] = Direction.values()[i];
-            newrot[f.getIndex()] = facerot[i];
+            newface[f.ordinal()] = Direction.values()[i];
+            newrot[f.ordinal()] = facerot[i];
         }
         facemap = newface;
         facerot = newrot;
@@ -78,8 +78,8 @@ public enum ModelRotation {
     }
     
     private void transferFace(Direction src, Direction dest, int rotation, Direction[] newface, int[] newrot) {
-    	newface[dest.getIndex()] = facemap[src.getIndex()];
-    	newrot[dest.getIndex()] = (facerot[src.getIndex()] + rotation) % 4;
+    	newface[dest.ordinal()] = facemap[src.ordinal()];
+    	newrot[dest.ordinal()] = (facerot[src.ordinal()] + rotation) % 4;
     }
     private void rotateX() {
     	int[] newrot = new int[6];
@@ -113,11 +113,11 @@ public enum ModelRotation {
     }
 
     public Direction rotateFace(Direction facing) {
-        return facemap[facing.getIndex()];
+        return facemap[facing.ordinal()];
     }
     
     public int rotateFaceOrientation(Direction facing) {
-    	return 90 * facerot[facing.getIndex()];
+    	return 90 * facerot[facing.ordinal()];
     }
     
     // Apply rotation transform to vector 'in place'

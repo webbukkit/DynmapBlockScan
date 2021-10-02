@@ -17,7 +17,7 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParseException;
 
-import net.minecraft.util.Direction;
+import net.minecraft.core.Direction;
 
 // Container for parsed JSON elements from block model
 public class BlockElement {

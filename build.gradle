@@ -1,18 +1,13 @@
 
 buildscript {
     repositories {
-     mavenLocal()
-     maven { url "https://oss.sonatype.org/content/repositories/releases" }
-     maven { url "http://repo.mikeprimm.com" }
-     maven { url "https://repo.maven.apache.org/maven2" }
-     maven { url "https://hub.spigotmc.org/nexus/content/repositories/snapshots/" }
-     maven { url "https://repo.codemc.org/repository/maven-public/" }
-     maven { url = 'https://files.minecraftforge.net/maven' }
-     jcenter()
-     mavenCentral()     
+        maven { url = 'https://files.minecraftforge.net/maven' }
+	    maven { url "https://repo.mikeprimm.com" }
+        jcenter()
+        mavenCentral()
     }
     dependencies {
-        classpath group: 'net.minecraftforge.gradle', name: 'ForgeGradle', version: '3.+', changing: true
+        classpath group: 'net.minecraftforge.gradle', name: 'ForgeGradle', version: '5.1.+', changing: true
     }
 }
 
@@ -31,21 +26,22 @@ configFile.withReader {
 version = project.config.Dynmap_version + project.config.Dynmap_extversion
 group= "us.dynmap.forge" // http://maven.apache.org/guides/mini/guide-naming-conventions.html
 archivesBaseName = "DynmapBlockScan"
-sourceCompatibility = targetCompatibility = compileJava.sourceCompatibility = compileJava.targetCompatibility = '1.8' // Need this here so eclipse task generates correctly.
+sourceCompatibility = targetCompatibility = compileJava.sourceCompatibility = compileJava.targetCompatibility = JavaLanguageVersion.of(16) // Need this here so eclipse task generates correctly.
 ext.buildNumber = System.getenv().BUILD_NUMBER ?: "Dev"
 
 dependencies {
-	compile "us.dynmap:DynmapCoreAPI:${config.Dynmap_version}${config.Dynmap_extversion}:all"
-    minecraft 'net.minecraftforge:forge:1.16.5-36.2.0'
+	implementation "us.dynmap:DynmapCoreAPI:${config.Dynmap_version}${config.Dynmap_extversion}:all"
+    minecraft 'net.minecraftforge:forge:1.17.1-37.0.12'
 }
 
 minecraft {
-    mappings channel: 'snapshot', version: '20201028-1.16.3'
+    mappings channel: 'official', version: '1.17.1'
+    accessTransformer = file('src/main/resources/META-INF/accesstransformer.cfg')
     runs {
         server {
             workingDirectory project.file('run').canonicalPath
         }
-	}
+    }
 }
 
 repositories {
@@ -60,22 +56,12 @@ configurations {
 
 processResources
 {
-    inputs.property "version", project.version + '-' + project.ext.buildNumber
-    
-    // replace stuff in mcmod.info, nothing else
-    from(sourceSets.main.resources.srcDirs) {
-        include 'META-INF/mods.toml'
-                
+    filesMatching('META-INF/mods.toml') {
         // replace version and mcversion
         expand(
         	version: project.version + '-' + project.ext.buildNumber,
-        	mcversion: "1.16.5"
+        	mcversion: "1.17.1"
     	)
-    }
-        
-    // copy everything else, thats not the mcmod.info
-    from(sourceSets.main.resources.srcDirs) {
-        exclude 'META-INF/mods.toml'
     }
 }
 

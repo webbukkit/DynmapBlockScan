@@ -10,10 +10,10 @@ import net.minecraftforge.fml.DistExecutor;
 import net.minecraftforge.fml.ModList;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
-import net.minecraftforge.fml.event.server.FMLServerStartedEvent;
-import net.minecraftforge.fml.event.server.FMLServerStartingEvent;
-import net.minecraftforge.fml.event.server.FMLServerStoppingEvent;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
+import net.minecraftforge.fmlserverevents.FMLServerStartedEvent;
+import net.minecraftforge.fmlserverevents.FMLServerStartingEvent;
+import net.minecraftforge.fmlserverevents.FMLServerStoppingEvent;
 
 @Mod("dynmapblockscan")
 public class DynmapBlockScanMod
@@ -24,7 +24,7 @@ public class DynmapBlockScanMod
 
     // Says where the client and server 'proxy' code is loaded.
     public static Proxy proxy = DistExecutor.runForDist(() -> ClientProxy::new, () -> Proxy::new);
-    
+
     public static DynmapBlockScanPlugin plugin;
     public static File jarfile;
     public static boolean verboselogging = false;
