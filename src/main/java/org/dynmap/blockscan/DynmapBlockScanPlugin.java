@@ -73,13 +73,14 @@ import org.dynmap.blockscan.statehandlers.GateMetadataStateHandler;
 
 import net.minecraft.block.Block;
 import net.minecraft.server.MinecraftServer;
-import net.minecraft.state.IProperty;
+import net.minecraft.state.Property;
 import net.minecraft.util.Direction;
 import net.minecraft.util.IStringSerializable;
 import net.minecraft.util.ObjectIntIdentityMap;
 import net.minecraft.util.ResourceLocation;
 import net.minecraftforge.fml.ModContainer;
 import net.minecraftforge.fml.ModList;
+import net.minecraftforge.fml.common.registry.GameRegistry;
 import net.minecraftforge.fml.loading.moddiscovery.ModFile;
 import net.minecraftforge.fml.loading.moddiscovery.ModFileInfo;
 import net.minecraftforge.fml.loading.moddiscovery.ModInfo;
@@ -263,7 +264,9 @@ public class DynmapBlockScanPlugin
     public void serverStarted() {
     }
     public void serverStarting() {
+    	logger.info("buildAssetMap");
     	buildAssetMap();
+    	logger.info("loadOverrideResources");
         // Load override resources
         InputStream override_str = openResource("dynmapblockscan", "blockstateoverrides.json");
         if (override_str != null) {
@@ -283,6 +286,7 @@ public class DynmapBlockScanPlugin
         	logger.info("Failed to load block overrides");
         	overrides = new BlockStateOverrides();
         }
+    	logger.info("scan for overrides");
         // Scan other modules for block overrides
         for (ModInfo mod : ModList.get().getMods()) {
             InputStream str = openAssetResource(mod.getModId(), "dynmap", "blockstateoverrides.json", true);
@@ -312,19 +316,23 @@ public class DynmapBlockScanPlugin
 
         Map<String, BlockRecord> blockRecords = new HashMap<String, BlockRecord>();
 
+    	logger.info("Start processing states");
+
         // Now process models from block records
         Map<String, BlockModel> models = new HashMap<String, BlockModel>();
-        
+
         ObjectIntIdentityMap<net.minecraft.block.BlockState> bsids = Block.BLOCK_STATE_IDS;
         Block baseb = null;
+        
         Iterator<net.minecraft.block.BlockState> iter = bsids.iterator();
         // Scan blocks and block states
         while (iter.hasNext()) {
             net.minecraft.block.BlockState blkstate = iter.next();
             Block b = blkstate.getBlock();
             if (b == baseb) { continue; }
+            baseb = b;
             ResourceLocation rl = b.getRegistryName();
-            //logger.info(String.format("Block %s: %d", rl, Block.getIdFromBlock(b)));
+            //logger.info(String.format("Block %s", rl.toString()));
             net.minecraft.state.StateContainer<Block, net.minecraft.block.BlockState> bsc = b.getStateContainer();
             // See if any of the block states use MODEL
             boolean uses_model = false;
@@ -1079,12 +1087,12 @@ public class DynmapBlockScanPlugin
     public Map<String, List<String>> buildPropoertMap(net.minecraft.state.StateContainer<Block, net.minecraft.block.BlockState> bsc) {
     	Map<String, List<String>> renderProperties = new HashMap<String, List<String>>();
 		// Build table of render properties and valid values
-		for (IProperty<?> p : bsc.getProperties()) {
+		for (Property<?> p : bsc.getProperties()) {
 			String pn = p.getName();
 			ArrayList<String> pvals = new ArrayList<String>();
 			for (Comparable<?> val : p.getAllowedValues()) {
 				if (val instanceof IStringSerializable) {
-					pvals.add(((IStringSerializable)val).getName());
+					pvals.add(((IStringSerializable)val).toString());
 				}
 				else {
 					pvals.add(val.toString());
@@ -1098,10 +1106,10 @@ public class DynmapBlockScanPlugin
     // Build ImmutableMap<String, String> from properties in BlockState
     public ImmutableMap<String, String> fromBlockState(net.minecraft.block.BlockState bs) {
     	ImmutableMap.Builder<String,String> bld = ImmutableMap.builder();
-    	for (IProperty<?> x : bs.getProperties()) {
+    	for (Property<?> x : bs.getProperties()) {
     	    Object v = bs.get(x);
     		if (v instanceof IStringSerializable) {
-    			bld.put(x.getName(), ((IStringSerializable)v).getName());
+    			bld.put(x.getName(), ((IStringSerializable)v).toString());
     		}
     		else {
     			bld.put(x.getName(), v.toString());

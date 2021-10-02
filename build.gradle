@@ -31,17 +31,16 @@ configFile.withReader {
 version = project.config.Dynmap_version + project.config.Dynmap_extversion
 group= "us.dynmap.forge" // http://maven.apache.org/guides/mini/guide-naming-conventions.html
 archivesBaseName = "DynmapBlockScan"
-targetCompatibility = '1.8'
-sourceCompatibility = '1.8'
+sourceCompatibility = targetCompatibility = compileJava.sourceCompatibility = compileJava.targetCompatibility = '1.8' // Need this here so eclipse task generates correctly.
 ext.buildNumber = System.getenv().BUILD_NUMBER ?: "Dev"
 
 dependencies {
-    compile group: 'us.dynmap', name: 'DynmapCoreAPI', version: "${config.Dynmap_version}${config.DynmapCore_devversion}", ext: 'jar'
-    minecraft 'net.minecraftforge:forge:1.15.2-31.2.9'
+	compile "us.dynmap:DynmapCoreAPI:${config.Dynmap_version}${config.Dynmap_extversion}:all"
+    minecraft 'net.minecraftforge:forge:1.16.5-36.2.0'
 }
 
 minecraft {
-	mappings channel: 'snapshot', version: '20200514-1.15.1'
+    mappings channel: 'snapshot', version: '20201028-1.16.3'
     runs {
         server {
             workingDirectory project.file('run').canonicalPath
@@ -51,6 +50,7 @@ minecraft {
 
 repositories {
     mavenLocal()
+    maven { url "https://repo.mikeprimm.com" }
 }
 
 configurations {
@@ -69,7 +69,7 @@ processResources
         // replace version and mcversion
         expand(
         	version: project.version + '-' + project.ext.buildNumber,
-        	mcversion: "1.15.2"
+        	mcversion: "1.16.5"
     	)
     }
         

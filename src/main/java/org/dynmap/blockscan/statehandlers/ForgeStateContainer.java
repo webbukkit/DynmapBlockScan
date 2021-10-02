@@ -18,7 +18,7 @@ import net.minecraft.block.GrassBlock;
 import net.minecraft.block.LeavesBlock;
 import net.minecraft.block.TallGrassBlock;
 import net.minecraft.block.VineBlock;
-import net.minecraft.state.IProperty;
+import net.minecraft.state.Property;
 import net.minecraft.util.IStringSerializable;
 
 public class ForgeStateContainer extends StateContainer {
@@ -44,12 +44,12 @@ public class ForgeStateContainer extends StateContainer {
 		int idx = 0;
 		for (BlockState bs : bsl) {
 			ImmutableMap.Builder<String,String> bld = ImmutableMap.builder();
-			for (IProperty<?> ent : bs.getProperties()) {
+			for (Property<?> ent : bs.getProperties()) {
 				String pn = ent.getName();
 				if (renderprops.contains(pn)) {	// If valid render property
 					Comparable<?> v = bs.get(ent);
 					if (v instanceof IStringSerializable) {
-						v = ((IStringSerializable)v).getName();
+						v = ((IStringSerializable)v).toString();
 					}
 					bld.put(pn, v.toString());
 				}
