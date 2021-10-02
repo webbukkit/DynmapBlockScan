@@ -38,7 +38,7 @@ ext.buildNumber = System.getenv().BUILD_NUMBER ?: "Dev"
 minecraft {
     version = config.minecraft_version + "-" + config.forge_version
 	runDir = "run"
-	mappings = project.config.mapping_version
+	mappings = 'snapshot_nodoc_20171021'
 	replaceIn "Version.java"
     	replace "@VERSION@", config.Dynmap_version + config.Dynmap_extversion + '-' + project.ext.buildNumber
     	replace "@BUILD_NUMBER@", project.ext.buildNumber
@@ -46,6 +46,7 @@ minecraft {
 
 repositories {
     mavenLocal()
+    maven { url = "https://repo.mikeprimm.com" }
 }
 
 configurations {
@@ -54,7 +55,7 @@ configurations {
 }
 
 dependencies {
-    dynmap group: 'us.dynmap', name: 'DynmapCoreAPI', version: "${config.Dynmap_version}${config.DynmapCore_devversion}", ext: 'jar'
+    dynmap "us.dynmap:DynmapCoreAPI:${config.Dynmap_version}${config.Dynmap_extversion}:all"
 }
 
 processResources
