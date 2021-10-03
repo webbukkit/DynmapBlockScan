@@ -20,7 +20,7 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParseException;
 
 // Top level container class for JSON parsed BlockState data
-public class BlockState {
+public class BSBlockState {
 	// Parser for BlockState
 	private static Gson GSON;
 
@@ -37,7 +37,7 @@ public class BlockState {
 	
 	// Property value based nested state mapping
 	public String nestedProp = null;
-	public Map<String, BlockState> nestedValueMap = null;
+	public Map<String, BSBlockState> nestedValueMap = null;
 	
 	public String toString() {
 		StringBuilder sb = new StringBuilder();
@@ -54,7 +54,7 @@ public class BlockState {
 		Gson g = GSON;
 		if (g == null) {
 			GsonBuilder gb = new GsonBuilder();	// Start with builder
-			gb.registerTypeAdapter(BlockState.class, new BlockState.Deserializer());
+			gb.registerTypeAdapter(BSBlockState.class, new BSBlockState.Deserializer());
 			gb.registerTypeAdapter(Variant.class, new Variant.Deserializer()); // Add Variant handler
 			gb.registerTypeAdapter(VariantList.class, new VariantList.Deserializer()); // Add VariantList handler
             gb.registerTypeAdapter(ForgeVariantV1List.class, new ForgeVariantV1List.Deserializer()); // Add ForgeVariantV1List handler
@@ -134,7 +134,7 @@ public class BlockState {
     	if (this.nestedProp != null) {
     		String pval = prop.get(this.nestedProp);
     		if (pval != null) {
-    			BlockState bs = this.nestedValueMap(pval);
+    			BSBlockState bs = this.nestedValueMap(pval);
     			if (bs != null) {
     				vlist = bs.getMatchingVariants(prop, models);
     			}
@@ -142,16 +142,16 @@ public class BlockState {
     	}
     	return vlist;
     }
-	private BlockState nestedValueMap(String pval) {
+	private BSBlockState nestedValueMap(String pval) {
 		// TODO Auto-generated method stub
 		return null;
 	}
 	
    // Custom deserializer - handles forge vs vanilla
-    public static class Deserializer implements JsonDeserializer<BlockState> {
+    public static class Deserializer implements JsonDeserializer<BSBlockState> {
         @Override
-        public BlockState deserialize(JsonElement element, Type type, JsonDeserializationContext context) throws JsonParseException {
-            BlockState bs = new BlockState();
+        public BSBlockState deserialize(JsonElement element, Type type, JsonDeserializationContext context) throws JsonParseException {
+            BSBlockState bs = new BSBlockState();
             // See if we have forge marker
             JsonObject obj = element.getAsJsonObject();
             if (obj.has("forge_marker")) {

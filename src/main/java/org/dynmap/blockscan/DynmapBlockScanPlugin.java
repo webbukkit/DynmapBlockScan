@@ -13,6 +13,7 @@ import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -26,7 +27,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.dynmap.blockscan.BlockStateOverrides.BlockStateOverride;
 import org.dynmap.blockscan.BlockStateOverrides.BlockTintOverride;
-import org.dynmap.blockscan.blockstate.BlockState;
+import org.dynmap.blockscan.blockstate.BSBlockState;
 import org.dynmap.blockscan.blockstate.Variant;
 import org.dynmap.blockscan.blockstate.VariantList;
 import org.dynmap.blockscan.model.BlockElement;
@@ -80,12 +81,10 @@ import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.Property;
 import net.minecraftforge.fml.ModContainer;
 import net.minecraftforge.fml.ModList;
-import net.minecraftforge.fml.loading.moddiscovery.ModFile;
-import net.minecraftforge.fml.loading.moddiscovery.ModFileInfo;
-import net.minecraftforge.fml.loading.moddiscovery.ModInfo;
 import net.minecraftforge.forgespi.language.IModFileInfo;
 import net.minecraftforge.forgespi.language.IModInfo;
 import net.minecraftforge.forgespi.locating.IModFile;
+import net.minecraft.world.level.block.state.BlockState;
 
 public class DynmapBlockScanPlugin
 {
@@ -316,30 +315,29 @@ public class DynmapBlockScanPlugin
         }
 
 
-        Map<String, BlockRecord> blockRecords = new HashMap<String, BlockRecord>();
+        Map<String, BlockRecord> blockRecords = new LinkedHashMap<String, BlockRecord>();
 
     	logger.info("Start processing states");
 
         // Now process models from block records
-        Map<String, BlockModel> models = new HashMap<String, BlockModel>();
+        Map<String, BlockModel> models = new LinkedHashMap<String, BlockModel>();
 
-    	IdMapper<net.minecraft.world.level.block.state.BlockState> bsids = Block.BLOCK_STATE_REGISTRY;
+    	IdMapper<BlockState> bsids = Block.BLOCK_STATE_REGISTRY;
         Block baseb = null;
         
-        Iterator<net.minecraft.world.level.block.state.BlockState> iter = bsids.iterator();
+        Iterator<BlockState> iter = bsids.iterator();
         // Scan blocks and block states
         while (iter.hasNext()) {
-            net.minecraft.world.level.block.state.BlockState blkstate = iter.next();
+            BlockState blkstate = iter.next();
             Block b = blkstate.getBlock();
             if (b == baseb) { continue; }
             baseb = b;
             ResourceLocation rl = b.getRegistryName();
-            //logger.info(String.format("Block %s", rl.toString()));
-            StateDefinition<Block, net.minecraft.world.level.block.state.BlockState> bsc = b.getStateDefinition();
+            StateDefinition<Block, BlockState> bsc = b.getStateDefinition();
             // See if any of the block states use MODEL
             boolean uses_model = false;
             boolean uses_nonmodel = false;
-            for (net.minecraft.world.level.block.state.BlockState bs : bsc.getPossibleStates()) {
+            for (BlockState bs : bsc.getPossibleStates()) {
             	switch (bs.getRenderShape()) {
             		case MODEL:
             			uses_model = true;
@@ -369,9 +367,9 @@ public class DynmapBlockScanPlugin
             	logger.warning(String.format("%s: Block mixes model and nonmodel state handling!", rl));
             }
             // Generate property value map
-            Map<String, List<String>> propMap = buildPropoertMap(bsc);
+            Map<String, List<String>> propMap = buildPropoertyMap(bsc);
             // Try to find blockstate file
-            BlockState blockstate = loadBlockState(rl.getNamespace(), rl.getPath(), overrides, propMap);
+            BSBlockState blockstate = loadBlockState(rl.getNamespace(), rl.getPath(), overrides, propMap);
             // Build block record
             BlockRecord br = new BlockRecord();
             // Process blockstate
@@ -382,7 +380,7 @@ public class DynmapBlockScanPlugin
         	br.sc = new ForgeStateContainer(b, br.renderProps, propMap);
         	if (blockstate != null) {
                 BlockStateOverride ovr = overrides.getOverride(rl.getNamespace(), rl.getPath());
-            	br.varList = new HashMap<StateRec, List<VariantList>>();
+            	br.varList = new LinkedHashMap<StateRec, List<VariantList>>();
         		// Loop through rendering states in state container
         		for (StateRec sr : br.sc.getValidStates()) {
                     Map<String, String> prop = sr.getProperties();
@@ -511,14 +509,26 @@ public class DynmapBlockScanPlugin
     	ModTextureDefinition txtDef;
     	ModModelDefinition modDef;
     	Map<String, TextureFile> textureIDsByPath = new HashMap<String, TextureFile>();
-    	int nextTxtID = 1;
+    	Set<String> textureIDs = new HashSet<String>();
+    	
+    	private String getTextureID(String txtpath) {
+    		String[] tok = txtpath.split("/");
+    		String base = tok[tok.length-1];
+    		int idx = 1;
+    		String id = base;
+    		while (textureIDs.contains(id)) {
+    			id = base + idx;
+    			idx++;
+    		}
+    		textureIDs.add(id);
+    		return id;
+    	}
     	
     	public TextureFile registerTexture(String txtpath) {
     	    txtpath = txtpath.toLowerCase();
     		TextureFile txtf = textureIDsByPath.get(txtpath);
     		if (txtf == null) {
-    			String txtid = String.format("txt%04d", nextTxtID);
-    			nextTxtID++;	// Assign next ID
+    			String txtid = getTextureID(txtpath);
     			// Split path to build full path
     			String[] ptok = txtpath.split(":");
     			String fname = "assets/" + ptok[0] + "/textures/" + ptok[1] + ".png";
@@ -532,8 +542,7 @@ public class DynmapBlockScanPlugin
         public TextureFile registerBiomeTexture(String txtpath) {
             TextureFile txtf = textureIDsByPath.get(txtpath);
             if (txtf == null) {
-                String txtid = String.format("txt%04d", nextTxtID);
-                nextTxtID++;    // Assign next ID
+    			String txtid = getTextureID(txtpath);
                 // Split path to build full path
                 String[] ptok = txtpath.split(":");
                 String fname = "assets/" + ptok[0] + "/textures/" + ptok[1] + ".png";
@@ -587,7 +596,7 @@ public class DynmapBlockScanPlugin
             return mod;
         }
     }
-    private Map<String, ModDynmapRec> modTextureDef = new HashMap<String, ModDynmapRec>();
+    private Map<String, ModDynmapRec> modTextureDef = new LinkedHashMap<String, ModDynmapRec>();
     
     private ModDynmapRec getModRec(String modid) {
         if (dynmap_api == null) {
@@ -830,9 +839,9 @@ public class DynmapBlockScanPlugin
         String modid = tok[0];
         String blknm = tok[1];
         int[] meta = state.metadata;
-        if (tok[0].equals("minecraft")) {   // Skip vanilla
-            return;
-        }
+        //if (tok[0].equals("minecraft")) {   // Skip vanilla
+        //    return;
+        //}
         // Temporary hack to avoid registering metadata duplicates
         meta = pruneDuplicateMeta(blkname, meta); 
         if (meta.length == 0) {
@@ -1086,8 +1095,8 @@ public class DynmapBlockScanPlugin
         return null;
     }
     
-    public Map<String, List<String>> buildPropoertMap(StateDefinition<Block, net.minecraft.world.level.block.state.BlockState> bsc) {
-    	Map<String, List<String>> renderProperties = new HashMap<String, List<String>>();
+    public Map<String, List<String>> buildPropoertyMap(StateDefinition<Block, BlockState> bsc) {
+    	Map<String, List<String>> renderProperties = new LinkedHashMap<String, List<String>>();
 		// Build table of render properties and valid values
 		for (Property<?> p : bsc.getProperties()) {
 			String pn = p.getName();
@@ -1106,7 +1115,7 @@ public class DynmapBlockScanPlugin
     }
     
     // Build ImmutableMap<String, String> from properties in BlockState
-    public ImmutableMap<String, String> fromBlockState(net.minecraft.world.level.block.state.BlockState bs) {
+    public ImmutableMap<String, String> fromBlockState(BlockState bs) {
     	ImmutableMap.Builder<String,String> bld = ImmutableMap.builder();
     	for (Property<?> x : bs.getProperties()) {
     	    Object v = bs.getValue(x);
@@ -1120,7 +1129,7 @@ public class DynmapBlockScanPlugin
     	return bld.build();
     }
     
-    private static BlockState loadBlockState(String modid, String respath, BlockStateOverrides override, Map<String, List<String>> propMap) {
+    private static BSBlockState loadBlockState(String modid, String respath, BlockStateOverrides override, Map<String, List<String>> propMap) {
     	BlockStateOverride ovr = override.getOverride(modid, respath);
     	
     	if (ovr == null) {	// No override
@@ -1135,11 +1144,11 @@ public class DynmapBlockScanPlugin
     			logger.warning(String.format("%s:%s : bad baseNameProperty=%s",  modid, respath, ovr.baseNameProperty));;
     			return null;
     		}
-    		BlockState bs = new BlockState();
+    		BSBlockState bs = new BSBlockState();
     		bs.nestedProp = ovr.baseNameProperty;
-    		bs.nestedValueMap = new HashMap<String, BlockState>();
+    		bs.nestedValueMap = new HashMap<String, BSBlockState>();
     		for (String v : vals) {
-    			BlockState bs2 = loadBlockStateFile(modid, v + ovr.nameSuffix);
+    			BSBlockState bs2 = loadBlockStateFile(modid, v + ovr.nameSuffix);
     			if (bs2 != null) {
     				bs.nestedValueMap.put(v,  bs2);
     			}
@@ -1150,21 +1159,21 @@ public class DynmapBlockScanPlugin
 		return null;
     }
     
-    private static BlockState loadBlockStateFile(String modid, String respath) {
+    private static BSBlockState loadBlockStateFile(String modid, String respath) {
     	// Default path
         String path = "assets/" + modid + "/blockstates/" + respath + ".json";
-    	BlockState bs = null;
+    	BSBlockState bs = null;
         InputStream is = openAssetResource(modid, "blockstates", respath + ".json", true);
         if (is == null) {	// Not found? scan for name under blockstates directory (some mods do this...)
         	
         }
         if (is != null) {	// Found it?
         	Reader rdr = new InputStreamReader(is, Charsets.UTF_8);
-        	Gson parse = BlockState.buildParser();	// Get parser
+        	Gson parse = BSBlockState.buildParser();	// Get parser
         	try {
                 JsonReader jrdr = new JsonReader(rdr);
                 jrdr.setLenient(true);
-        	    bs = parse.fromJson(jrdr, BlockState.class);
+        	    bs = parse.fromJson(jrdr, BSBlockState.class);
         	} catch (JsonSyntaxException jsx) {
                 logger.warning(String.format("%s:%s : JSON syntax error in block state file", modid, path), jsx);
         	}
