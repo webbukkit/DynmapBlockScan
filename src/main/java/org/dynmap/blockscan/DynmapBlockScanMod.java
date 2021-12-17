@@ -5,15 +5,15 @@ import java.util.Map;
 
 import net.minecraft.server.MinecraftServer;
 import net.minecraftforge.common.MinecraftForge;
+import net.minecraftforge.event.server.ServerStartedEvent;
+import net.minecraftforge.event.server.ServerStartingEvent;
+import net.minecraftforge.event.server.ServerStoppingEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.DistExecutor;
 import net.minecraftforge.fml.ModList;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
-import net.minecraftforge.fmlserverevents.FMLServerStartedEvent;
-import net.minecraftforge.fmlserverevents.FMLServerStartingEvent;
-import net.minecraftforge.fmlserverevents.FMLServerStoppingEvent;
 
 @Mod("dynmapblockscan")
 public class DynmapBlockScanMod
@@ -55,7 +55,7 @@ public class DynmapBlockScanMod
     private MinecraftServer server;
 
     @SubscribeEvent
-    public void onServerStarting(FMLServerStartingEvent event) {
+    public void onServerStarting(ServerStartingEvent event) {
         server = event.getServer();
         if(plugin == null)
             plugin = proxy.startServer(server);
@@ -63,12 +63,12 @@ public class DynmapBlockScanMod
     }
     
     @SubscribeEvent
-    public void onServerStarted(FMLServerStartedEvent event) {
+    public void onServerStarted(ServerStartedEvent event) {
         plugin.serverStarted();
     }
     
     @SubscribeEvent
-    public void serverStopping(FMLServerStoppingEvent event) {
+    public void serverStopping(ServerStoppingEvent event) {
     	proxy.stopServer(plugin);
     	plugin = null;
     }

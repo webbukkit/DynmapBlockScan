@@ -26,16 +26,16 @@ configFile.withReader {
 version = project.config.Dynmap_version + project.config.Dynmap_extversion
 group= "us.dynmap.forge" // http://maven.apache.org/guides/mini/guide-naming-conventions.html
 archivesBaseName = "DynmapBlockScan"
-sourceCompatibility = targetCompatibility = compileJava.sourceCompatibility = compileJava.targetCompatibility = JavaLanguageVersion.of(16) // Need this here so eclipse task generates correctly.
+sourceCompatibility = targetCompatibility = compileJava.sourceCompatibility = compileJava.targetCompatibility = JavaLanguageVersion.of(17) // Need this here so eclipse task generates correctly.
 ext.buildNumber = System.getenv().BUILD_NUMBER ?: "Dev"
 
 dependencies {
 	implementation "us.dynmap:DynmapCoreAPI:${config.Dynmap_version}${config.Dynmap_extversion}:all"
-    minecraft 'net.minecraftforge:forge:1.17.1-37.0.12'
+    minecraft 'net.minecraftforge:forge:1.18-38.0.12'
 }
 
 minecraft {
-    mappings channel: 'official', version: '1.17.1'
+    mappings channel: 'official', version: '1.18'
     accessTransformer = file('src/main/resources/META-INF/accesstransformer.cfg')
     runs {
         server {
@@ -60,7 +60,7 @@ processResources
         // replace version and mcversion
         expand(
         	version: project.version + '-' + project.ext.buildNumber,
-        	mcversion: "1.17.1"
+        	mcversion: "1.18.1"
     	)
     }
 }
