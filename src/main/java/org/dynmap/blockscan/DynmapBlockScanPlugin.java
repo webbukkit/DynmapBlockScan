@@ -839,9 +839,9 @@ public class DynmapBlockScanPlugin
         String modid = tok[0];
         String blknm = tok[1];
         int[] meta = state.metadata;
-        //if (tok[0].equals("minecraft")) {   // Skip vanilla
-        //    return;
-        //}
+        if (tok[0].equals("minecraft")) {   // Skip vanilla
+            return;
+        }
         // Temporary hack to avoid registering metadata duplicates
         meta = pruneDuplicateMeta(blkname, meta); 
         if (meta.length == 0) {
