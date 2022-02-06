@@ -1,0 +1,8 @@
+description = "core"
+
+sourceCompatibility = targetCompatibility = compileJava.sourceCompatibility = compileJava.targetCompatibility = JavaLanguageVersion.of(8) // Need this here so eclipse task generates correctly.
+
+jar {
+    destinationDir = file '../target'
+}
+
