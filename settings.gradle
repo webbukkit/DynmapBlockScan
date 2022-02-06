@@ -1,0 +1,22 @@
+pluginManagement {
+  repositories {
+    gradlePluginPortal()
+    maven { url "https://papermc.io/repo/repository/maven-public/" }
+    maven { url "https://maven.fabricmc.net/" }
+  }
+}
+
+rootProject.name = 'DynmapBlockScan'
+
+include ':forge-1.18'
+include ':forge-1.17.1'
+include ':forge-1.16.5'
+include ':forge-1.15.2'
+include ':forge-1.14.4'
+
+project(':forge-1.18').projectDir = "$rootDir/forge-1.18" as File
+project(':forge-1.17.1').projectDir = "$rootDir/forge-1.17.1" as File
+project(':forge-1.16.5').projectDir = "$rootDir/forge-1.16.5" as File
+project(':forge-1.15.2').projectDir = "$rootDir/forge-1.15.2" as File
+project(':forge-1.14.4').projectDir = "$rootDir/forge-1.14.4" as File
+
