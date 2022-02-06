@@ -1,4 +1,4 @@
-description = "core"
+project.archivesBaseName = "${parent.name}-core"
 
 sourceCompatibility = targetCompatibility = compileJava.sourceCompatibility = compileJava.targetCompatibility = JavaLanguageVersion.of(8) // Need this here so eclipse task generates correctly.
 
