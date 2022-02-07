@@ -27,7 +27,6 @@ public class DynmapBlockScanMod
 
     public static DynmapBlockScanPlugin plugin;
     public static File jarfile;
-    public static boolean verboselogging = false;
     
     public DynmapBlockScanMod() {
         instance = this;
