@@ -31,8 +31,8 @@ minecraft {
 project.archivesBaseName = "${parent.name}-forge-1.17.1"
 
 dependencies {    
-	implementation "us.dynmap:DynmapCoreAPI:${parent.version}"
-	shadow project(path: ":core")
+	compileOnly "us.dynmap:DynmapCoreAPI:${parent.version}"
+    implementation project(path: ":core", configuration: "shadow")
     minecraft 'net.minecraftforge:forge:1.17.1-37.0.12'
 }
 
@@ -50,8 +50,10 @@ processResources
 shadowJar {
     dependencies {
         include(dependency(':core'))
+        exclude(dependency("us.dynmap:DynmapCoreAPI"))
         exclude("META-INF/maven/**")
         exclude("META-INF/services/**")
+        exclude("com/electronwill/**")
     }
     
     archiveName = "${parent.name}-${parent.version}-forge-1.17.1.jar"
