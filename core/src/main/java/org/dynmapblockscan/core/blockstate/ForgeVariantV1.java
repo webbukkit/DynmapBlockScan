@@ -24,6 +24,7 @@ public class ForgeVariantV1 {
     public Map<String, String> textures = new HashMap<String, String>();
 	public Integer x;
 	public Integer y;
+	public Integer z;
 	public Boolean uvlock;
     public Integer weight;
     public Boolean smooth_lighting;
@@ -58,6 +59,9 @@ public class ForgeVariantV1 {
 		if ((y != null) && (y != 0)) {
 			sb.append(",y=").append(y);
 		}
+		if ((z != null) && (z != 0)) {
+			sb.append(",z=").append(y);
+		}
 		if ((uvlock != null) && uvlock.booleanValue()) {
 			sb.append(",uvlock=true");
 		}
@@ -91,6 +95,9 @@ public class ForgeVariantV1 {
             }
             if (jobj.has("y")) {
                 v.y = context.deserialize(jobj.get("y"), Integer.class);
+            }
+            if (jobj.has("z")) {
+                v.z = context.deserialize(jobj.get("z"), Integer.class);
             }
             if (jobj.has("uvlock")) {
                 v.uvlock = context.deserialize(jobj.get("uvlock"), Boolean.class);
@@ -143,6 +150,9 @@ public class ForgeVariantV1 {
         }
         if (this.y == null) {
             this.y = src.y;
+        }
+        if (this.z == null) {
+            this.z = src.z;
         }
         if (this.uvlock == null) {
             this.uvlock = src.uvlock;
@@ -217,7 +227,7 @@ public class ForgeVariantV1 {
             mod = "dynmapblockscan:forgemodel" + idx;
         }
         // Now build vanilla variant
-        Variant var = new Variant(mod, this.x, this.y, this.uvlock, this.weight);
+        Variant var = new Variant(mod, this.x, this.y, this.z, this.uvlock, this.weight);
         // Now, do same for submodels : add them to list for variant
         if (this.submodel != null) {
             List<Variant> vlist = new ArrayList<Variant>();

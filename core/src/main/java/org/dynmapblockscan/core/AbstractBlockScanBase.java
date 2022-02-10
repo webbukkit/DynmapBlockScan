@@ -16,7 +16,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.Map.Entry;
-import java.util.logging.Logger;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
@@ -43,18 +42,9 @@ import org.dynmapblockscan.core.blockstate.VariantList;
 import org.dynmapblockscan.core.model.BlockElement;
 import org.dynmapblockscan.core.model.BlockFace;
 import org.dynmapblockscan.core.model.BlockModel;
-import org.dynmapblockscan.core.statehandlers.BedMetadataStateHandler;
-import org.dynmapblockscan.core.statehandlers.DoorStateHandler;
-import org.dynmapblockscan.core.statehandlers.GateMetadataStateHandler;
 import org.dynmapblockscan.core.statehandlers.IStateHandler;
 import org.dynmapblockscan.core.statehandlers.IStateHandlerFactory;
-import org.dynmapblockscan.core.statehandlers.NSEWConnectedMetadataStateHandler;
-import org.dynmapblockscan.core.statehandlers.NSEWUConnectedMetadataStateHandler;
-import org.dynmapblockscan.core.statehandlers.PistonMetadataStateHandler;
-import org.dynmapblockscan.core.statehandlers.RedstoneWireStateHandler;
 import org.dynmapblockscan.core.statehandlers.SimpleMetadataStateHandler;
-import org.dynmapblockscan.core.statehandlers.SnowyMetadataStateHandler;
-import org.dynmapblockscan.core.statehandlers.StairMetadataStateHandler;
 import org.dynmapblockscan.core.statehandlers.StateContainer;
 import org.dynmapblockscan.core.statehandlers.StateContainer.StateRec;
 import org.dynmapblockscan.core.statehandlers.StateContainer.WellKnownBlockClasses;
@@ -73,19 +63,9 @@ public abstract class AbstractBlockScanBase {
     public static boolean verboselogging = false;
     protected BlockStateOverrides overrides;
     	    
-    private Gson gson = new GsonBuilder().setPrettyPrinting().create();
+    //private Gson gson = new GsonBuilder().setPrettyPrinting().create();
     
     protected IStateHandlerFactory[] state_handler = {
-        new NSEWConnectedMetadataStateHandler(),
-        new NSEWUConnectedMetadataStateHandler(),
-        new RedstoneWireStateHandler(),
-        new GateMetadataStateHandler(),
-        new StairMetadataStateHandler(),
-        new DoorStateHandler(),
-        new PistonMetadataStateHandler(),
-        new SnowyMetadataStateHandler(),
-        new BedMetadataStateHandler(),
-        new SimpleMetadataStateHandler(true),
         new SimpleMetadataStateHandler(false)
     };
 
@@ -460,113 +440,6 @@ public abstract class AbstractBlockScanBase {
     	}
     }
     
-    public boolean isSimpleCuboid(List<BlockElement> elements) {
-        for (BlockElement be : elements) {
-            if (be.isSimpleCuboid() == false) {
-                return false;
-            }
-        }
-        return true;
-    }
-    
-    public void registerSimpleDynmapCuboids(String blkname, StateRec state, List<BlockElement> elems, WellKnownBlockClasses type) {
-        String[] tok = blkname.split(":");
-        String modid = tok[0];
-        String blknm = tok[1];
-        if (tok[0].equals("minecraft")) {   // Skip vanilla
-            return;
-        }
-        // Get record for mod
-        ModDynmapRec td = getModRec(modid);
-        // Create block texture record
-        BlockTextureRecord btr = td.getBlockTxtRec(blknm,state.keyValuePairs);
-        if (btr == null) {
-            return;
-        }
-        // Check for tinting and/or culling
-        boolean tinting = false;   // Watch out for tinting
-        boolean culling = false;
-        for (BlockElement be : elems) {
-            for (BlockFace f : be.faces.values()) {
-                if (f.tintindex >= 0) {
-                    tinting = true;
-                    break;
-                }
-                if (f.cullface != null) {
-                    culling = true;
-                }
-            }
-        }
-        // Set to transparent (or semitransparent if culling)
-        if (culling) {
-            btr.setTransparencyMode(TransparencyMode.SEMITRANSPARENT);
-        }
-        else {
-            btr.setTransparencyMode(TransparencyMode.TRANSPARENT);
-        }
-        // If block has tinting, try to figure out what to use
-        if (tinting) {
-            String txtfile = null;
-            BlockTintOverride ovr = overrides.getTinting(modid, blknm, state.getProperties());
-            if (ovr == null) { // No match, need to guess
-                switch (type) {
-                case LEAVES:
-                case VINES:
-                    txtfile = "minecraft:colormap/foliage";
-                    break;
-                default:
-                    txtfile = "minecraft:colormap/grass";
-                    break;
-                }
-            }
-            else {
-                txtfile = ovr.colormap[0];
-            }
-            if (txtfile != null) {
-                TextureFile gtf = td.registerBiomeTexture(txtfile);
-                btr.setBlockColorMapTexture(gtf);
-            }
-        }
-        // Get cuboid model
-        CuboidBlockModel mod = td.getCuboidModelRec(blknm, state.keyValuePairs);
-        // Loop over elements
-        int imgidx = 0;
-        int[] cuboididx = new int[6];
-        for (BlockElement be : elems) {
-            // Initialize to no texture for each side
-            for (int v = 0; v < cuboididx.length; v++) cuboididx[v] = -1;
-            // Loop over the images for the element
-            for (Entry<ElementFace, BlockFace> face : be.faces.entrySet()) {
-                ElementFace facing = face.getKey();
-                BlockFace f = face.getValue();
-                if (f.texture != null) {
-                    TextureFile gtf = td.registerTexture(f.texture);
-                    int faceidx = (360-f.rotation);
-                    if (!be.uvlock) {
-                        faceidx = faceidx + f.facerotation;
-                    }
-                    TextureModifier tm = TextureModifier.NONE;
-                    switch (faceidx % 360) {
-                    case 90:
-                        tm = TextureModifier.ROT90;
-                        break;
-                    case 180:
-                        tm = TextureModifier.ROT180;
-                        break;
-                    case 270:
-                        tm = TextureModifier.ROT270;
-                        break;
-                    }
-                    cuboididx[facing.ordinal()] = imgidx;
-                    btr.setPatchTexture(gtf, tm, imgidx);
-                    imgidx++;
-                }
-            }
-            // Add cuboid element to model
-            mod.addCuboid(be.from[0]/16.0, be.from[1]/16.0, be.from[2]/16.0, be.to[0]/16.0, be.to[1]/16.0, be.to[2]/16.0, cuboididx);
-        }
-    }
-
     public void registerModelListModel(String blkname, StateRec state, List<BlockElement> elems, WellKnownBlockClasses type) {
         String[] tok = blkname.split(":");
         String modid = tok[0];
@@ -649,7 +522,8 @@ public abstract class AbstractBlockScanBase {
         			}
         		}
         	}
-            ModelBlock modelem = mod.addModelBlock(be.from, be.to, xrot, yrot, zrot, be.shade, origin);
+            ModelBlock modelem = mod.addModelBlock(be.from, be.to, xrot, yrot, zrot, be.shade, origin,
+            		be.modelrot.rotX, be.modelrot.rotY, be.modelrot.rotZ);
             // Initialize to no texture for each side
             for (int v = 0; v < cuboididx.length; v++) cuboididx[v] = -1;
             // Loop over the images for the element
@@ -968,19 +842,6 @@ public abstract class AbstractBlockScanBase {
                         	registerModelListModel(blkname, var.getKey(), elems, br.sc.getBlockType());
                         }
                     }
-//                    // Else if simple cuboid
-//                    else if (isSimpleCuboid(elems)) {
-//                        if (br.handler != null) {
-//                            //logger.info(String.format("%s: %s is simple block with %s map",  blkname, var.getKey(), br.handler.getName()));
-//                            registerSimpleDynmapCuboids(blkname, var.getKey(), elems, br.sc.getBlockType());
-//                        }
-//                    }
-//                    else  {
-//                        if (br.handler != null) {
-//                            //logger.info(String.format("%s: %s is simple block with %s map",  blkname, var.getKey(), br.handler.getName()));
-//                            registerDynmapPatches(blkname, var.getKey(), elems, br.sc.getBlockType());
-//                        }
-//                    }
         		}
         	}
         }    	

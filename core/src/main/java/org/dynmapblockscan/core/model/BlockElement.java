@@ -27,11 +27,10 @@ public class BlockElement {
     public ElementRotation rotation = null;
     public Map<ElementFace, BlockFace> faces = Collections.emptyMap();
     public boolean shade = true;
-    
     public boolean uvlock = false;
-    
-    private static final Vector3D centervect = new Vector3D(8,8,8); // Center of rotation
-    
+
+    public ModelRotation modelrot = new ModelRotation(0, 0, 0);	// Model rotation inherited from block state
+
     public BlockElement() {}
     
     /**
@@ -46,6 +45,9 @@ public class BlockElement {
     	if (src.rotation != null) { 
     		rotation = new ElementRotation(src.rotation);
     	}
+    	if (mrot != null) {
+    		modelrot = mrot;
+    	}
     	shade = src.shade;
     	// Build resolved copies of faces
     	faces = new HashMap<ElementFace, BlockFace>();
@@ -57,25 +59,9 @@ public class BlockElement {
     			BlockScanCore.logger.info(txtrefs.toString());
     		}
     		else {
-    			faces.put(mrot.rotateFace(face.getKey()), new BlockFace(f, v, mrot.rotateFaceOrientation(face.getKey())));
+    			faces.put(face.getKey(), new BlockFace(f, v, 0));
     		}
-    	}
-    	// Rotate from/to, based on model rotation
-    	Vector3D fromvec = new Vector3D(this.from[0], this.from[1], this.from[2]);
-        Vector3D tovec = new Vector3D(this.to[0], this.to[1], this.to[2]);
-        fromvec.subtract(centervect);   // Shift to center
-        tovec.subtract(centervect);
-        mrot.transformVector(fromvec);  // Apply rotation transform
-        mrot.transformVector(tovec);
-        fromvec.add(centervect);   // Shift back 
-        tovec.add(centervect);
-        from[0] = Math.min(fromvec.x, tovec.x);
-        from[1] = Math.min(fromvec.y, tovec.y);
-        from[2] = Math.min(fromvec.z, tovec.z);
-        to[0] = Math.max(fromvec.x, tovec.x);
-        to[1] = Math.max(fromvec.y, tovec.y);
-        to[2] = Math.max(fromvec.z, tovec.z);
-        
+    	}        
         this.uvlock = uvlock;   // Remember uvlock
     }
     
@@ -94,6 +80,9 @@ public class BlockElement {
         if (!isSimpleCuboid()) {
             return false;
         }
+    	if (!this.modelrot.isDefault()) {
+    		return false;
+    	}
     	// Check from corner
     	if ((from == null) || (from.length < 3) || (from[0] != 0.0F) || (from[1] != 0.0F) || (from[2] != 0.0F)) {
     		return false;
