@@ -8,7 +8,7 @@ public class BlockFace {
     public String cullface = null;
     public int tintindex = -1;
     public String texture;
-    public float[] uv = null;
+    public double[] uv = null;
     public int rotation = 0;
     
     // From transforms

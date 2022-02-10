@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import org.dynmapblockscan.core.AbstractBlockScanBase;
 import org.dynmapblockscan.core.blockstate.Variant;
 import org.dynmapblockscan.core.model.BlockElement;
 import org.dynmapblockscan.core.model.BlockModel;
@@ -51,6 +52,10 @@ public class Variant {
 		    // Find topmost elements
 		    BlockModel elemmod = basemod;
 		    while (elemmod.elements.isEmpty()) {
+				// Assert: if parent is defined, needs to have parentModel
+				if ((basemod.parent != null) && (elemmod.parentModel == null)) {
+					AbstractBlockScanBase.logger.info("ERROR: modelID=" + modelID + " has parent=" + basemod.parent + " but no parentModel");
+				}
 		        elemmod = elemmod.parentModel;	// Get parent model
 		        if (elemmod == null) {	// Not found, we've got no elements
 		            break;

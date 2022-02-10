@@ -131,6 +131,10 @@ public enum ModelRotation {
         }
         return rot;
     }
+    
+    public String toString() {
+    	return String.format("{ x: %d, y: %s }", this.quartersX * 90, this.quartersY * 90);
+    }
 
     static {
         for (ModelRotation modelrotation : values()) {

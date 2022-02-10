@@ -9,6 +9,7 @@ import org.dynmapblockscan.core.statehandlers.StateContainer;
 
 import com.google.common.collect.ImmutableMap;
 
+import net.minecraft.util.StringRepresentable;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.BushBlock;
 import net.minecraft.world.level.block.CropBlock;
@@ -48,9 +49,9 @@ public class ForgeStateContainer extends StateContainer {
 				String pn = ent.getName();
 				if (renderprops.contains(pn)) {	// If valid render property
 					Comparable<?> v = bs.getValue(ent);
-					//if (v instanceof IStringSerializable) {
-					//	v = ((IStringSerializable)v).toString();
-					//}
+					if (v instanceof StringRepresentable) {
+						v = ((StringRepresentable)v).getSerializedName();
+					}
 					bld.put(pn, v.toString());
 				}
 			}

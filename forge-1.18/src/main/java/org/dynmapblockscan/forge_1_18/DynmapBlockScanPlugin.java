@@ -15,6 +15,7 @@ import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.dynmapblockscan.core.AbstractBlockScanBase;
+import org.dynmapblockscan.core.BlockScanLog;
 import org.dynmapblockscan.core.BlockStateOverrides.BlockStateOverride;
 import org.dynmapblockscan.core.blockstate.BSBlockState;
 import org.dynmapblockscan.core.blockstate.VariantList;
@@ -28,6 +29,7 @@ import com.google.common.collect.ImmutableMap;
 import net.minecraft.core.IdMapper;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
+import net.minecraft.util.StringRepresentable;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.Property;
@@ -45,6 +47,7 @@ public class DynmapBlockScanPlugin extends AbstractBlockScanBase
     public DynmapBlockScanPlugin(MinecraftServer srv)
     {
         plugin = this;
+        logger = new OurLog();
     }
             
     public void buildAssetMap() {
@@ -217,12 +220,12 @@ public class DynmapBlockScanPlugin extends AbstractBlockScanBase
 			String pn = p.getName();
 			ArrayList<String> pvals = new ArrayList<String>();
 			for (Comparable<?> val : p.getPossibleValues()) {
-				//if (val instanceof IStringSerializable) {
-				//	pvals.add(((IStringSerializable)val).toString());
-				//}
-				//else {
+				if (val instanceof StringRepresentable) {
+					pvals.add(((StringRepresentable)val).getSerializedName());
+				}
+				else {
 					pvals.add(val.toString());
-				//}
+				}
 			}
 			renderProperties.put(pn, pvals);
 		}
@@ -234,17 +237,17 @@ public class DynmapBlockScanPlugin extends AbstractBlockScanBase
     	ImmutableMap.Builder<String,String> bld = ImmutableMap.builder();
     	for (Property<?> x : bs.getProperties()) {
     	    Object v = bs.getValue(x);
-    		//if (v instanceof IStringSerializable) {
-    		//	bld.put(x.getName(), ((IStringSerializable)v).toString());
-    		//}
-    		//else {
+    		if (v instanceof StringRepresentable) {
+    			bld.put(x.getName(), ((StringRepresentable)v).getSerializedName());
+    		}
+    		else {
     			bld.put(x.getName(), v.toString());
-    		//}
+    		}
     	}
     	return bld.build();
     }
     
-    public static class OurLog {
+    public static class OurLog implements BlockScanLog {
         Logger log;
         public static final String DM = "";
         OurLog() {

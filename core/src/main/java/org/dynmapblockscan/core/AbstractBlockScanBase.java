@@ -26,10 +26,13 @@ import org.dynmap.modsupport.CuboidBlockModel;
 import org.dynmap.modsupport.ModModelDefinition;
 import org.dynmap.modsupport.ModSupportAPI;
 import org.dynmap.modsupport.ModTextureDefinition;
+import org.dynmap.modsupport.ModelBlockModel;
 import org.dynmap.modsupport.PatchBlockModel;
 import org.dynmap.modsupport.TextureFile;
 import org.dynmap.modsupport.TextureModifier;
 import org.dynmap.modsupport.TransparencyMode;
+import org.dynmap.modsupport.ModelBlockModel.ModelBlock;
+import org.dynmap.modsupport.ModelBlockModel.SideRotation;
 import org.dynmap.renderer.RenderPatchFactory.SideVisible;
 import org.dynmapblockscan.core.BlockStateOverrides.BlockStateOverride;
 import org.dynmapblockscan.core.BlockStateOverrides.BlockTintOverride;
@@ -66,10 +69,12 @@ import com.google.gson.stream.JsonReader;
 import java.nio.charset.StandardCharsets;
 
 public abstract class AbstractBlockScanBase {
-	public static Logger logger = Logger.getLogger("DynmapBlockScan");
+	public static BlockScanLog logger;
     public static boolean verboselogging = false;
     protected BlockStateOverrides overrides;
-    	
+    	    
+    private Gson gson = new GsonBuilder().setPrettyPrinting().create();
+    
     protected IStateHandlerFactory[] state_handler = {
         new NSEWConnectedMetadataStateHandler(),
         new NSEWUConnectedMetadataStateHandler(),
@@ -210,9 +215,11 @@ public abstract class AbstractBlockScanBase {
     	}
     	return is;
     }
-
     protected BlockModel loadBlockModelFile(String modid, String respath) {
-        String path = "assets/" + modid + "/models/" + respath + ".json";
+    	// Handle respath NOT having a path under models
+    	if (respath.indexOf('/') < 0) {
+    		respath = "block/" + respath;
+    	}
     	BlockModel bs = null;
         InputStream is = openAssetResource(modid, "models", respath + ".json", true);
         if (is != null) {	// Found it?
@@ -223,19 +230,19 @@ public abstract class AbstractBlockScanBase {
         	    jrdr.setLenient(true);
         	    bs = parse.fromJson(jrdr, BlockModel.class);
         	} catch (JsonSyntaxException jsx) {
-                logger.warning(String.format("%s:%s : JSON syntax error in model file", modid, path));
+                logger.warning(String.format("%s:%s : JSON syntax error in model file", modid, respath));
         	}
         	try {
 				is.close();
 			} catch (IOException e) {
 			}
         	if (bs == null) {
-        		logger.info(String.format("%s:%s : Failed to load model!", modid, path));
+        		logger.info(String.format("%s:%s : Failed to load model!", modid, respath));
                 bs = new BlockModel();    // Return empty model
         	}
         }
         else {
-    		logger.info(String.format("%s:%s : Failed to open model", modid, path));
+    		logger.info(String.format("%s:%s : Failed to open model", modid, respath));
     		bs = new BlockModel();    // Return empty model
         }
         return bs;
@@ -292,47 +299,55 @@ public abstract class AbstractBlockScanBase {
             return txtf;
         }
         // Create block texture record
-        public BlockTextureRecord getBlockTxtRec(String blknm, int[] meta) {
+        public BlockTextureRecord getBlockTxtRec(String blknm, Map<String, String> statemap) {
             BlockTextureRecord btr = txtDef.addBlockTextureRecord(blknm);
             if (btr == null) {
                 return null;
             }
             if (verboselogging)
-                logger.fine("Created block record for " + blknm + Arrays.toString(meta));
-            // Set matching metadata
-            for (int metaval : meta) {
-                btr.setMetaValue(metaval);
-            }
+                logger.debug("Created block record for " + blknm + statemap.toString());
+            // Set matching statemap
+            btr.setBlockStateMapping(statemap);
             return btr;
         }
         // Create cuboid model
-        public CuboidBlockModel getCuboidModelRec(String blknm, int[] meta) {
+        public CuboidBlockModel getCuboidModelRec(String blknm, Map<String,String> statemap) {
             if (this.modDef == null) {
                 this.modDef = this.txtDef.getModelDefinition();
             }
             CuboidBlockModel mod = this.modDef.addCuboidModel(blknm);
             if (verboselogging)
-                logger.fine("Created cuboid model for " + blknm + Arrays.toString(meta));
+                logger.debug("Created cuboid model for " + blknm + statemap);
             // Set matching metadata
-            for (int metaval : meta) {
-                mod.setMetaValue(metaval);
-            }
+            mod.setBlockStateMapping(statemap);
             return mod;
         }
         // Create patch model
-        public PatchBlockModel getPatchModelRec(String blknm, int[] meta) {
+        public PatchBlockModel getPatchModelRec(String blknm, Map<String, String> statemap) {
             if (this.modDef == null) {
                 this.modDef = this.txtDef.getModelDefinition();
             }
             PatchBlockModel mod = this.modDef.addPatchModel(blknm);
             if (verboselogging)
-                logger.fine("Created patch model for " + blknm + Arrays.toString(meta));
+                logger.debug("Created patch model for " + blknm + statemap);
             // Set matching metadata
-            for (int metaval : meta) {
-                mod.setMetaValue(metaval);
-            }
+            mod.setBlockStateMapping(statemap);
+            
             return mod;
         }
+        // Create model block model
+        public ModelBlockModel getModelBlockModelRec(String blknm, Map<String, String> statemap) {
+            if (this.modDef == null) {
+                this.modDef = this.txtDef.getModelDefinition();
+            }
+            ModelBlockModel mod = this.modDef.addModelBlockModel(blknm);
+            if (verboselogging)
+                logger.debug("Created model block model for " + blknm + statemap);
+            
+            mod.setBlockStateMapping(statemap);            
+            return mod;
+        }
+        
     }
     protected Map<String, ModDynmapRec> modTextureDef = new LinkedHashMap<String, ModDynmapRec>();
     
@@ -352,7 +367,7 @@ public abstract class AbstractBlockScanBase {
             }
             modTextureDef.put(modid, td);
             if (verboselogging)
-                logger.fine("Create dynmap mod record for " + modid);
+                logger.debug("Create dynmap mod record for " + modid);
         }
         return td;
     }
@@ -375,20 +390,14 @@ public abstract class AbstractBlockScanBase {
     	String[] tok = blkname.split(":");
     	String modid = tok[0];
     	String blknm = tok[1];
-    	int[] meta = state.metadata;
+
     	if (tok[0].equals("minecraft")) {	// Skip vanilla
     		return;
     	}
-        // Temporary hack to avoid registering metadata duplicates
-    	meta = pruneDuplicateMeta(blkname, meta); 
-    	if (meta.length == 0) {
-            return;
-        }
-
     	// Get record for mod
     	ModDynmapRec td = getModRec(modid);
     	// Create block texture record
-    	BlockTextureRecord btr = td.getBlockTxtRec(blknm, meta);
+    	BlockTextureRecord btr = td.getBlockTxtRec(blknm, state.keyValuePairs);
     	if (btr == null) {
     		return;
     	}
@@ -450,27 +459,6 @@ public abstract class AbstractBlockScanBase {
     		}
     	}
     }
-    // Temporary fix to avoid registering duplicate metadata values (until we get the block state mapping working right...)
-    private Set<String> registeredBlockMeta = new HashSet<String>();
-
-    protected int[] pruneDuplicateMeta(String blkname, int[] meta) {
-        List<Integer> goodmeta = new ArrayList<Integer>();
-        for (int mv : meta) {
-            String blkid = blkname + ":" + mv;
-            if (registeredBlockMeta.contains(blkid) == false) {
-                registeredBlockMeta.add(blkid);
-                goodmeta.add(mv);
-            }
-        }
-        if (meta.length != goodmeta.size()) {
-            int[] newmeta = new int[goodmeta.size()];
-            for (int i = 0; i < newmeta.length; i++) {
-                newmeta[i] = goodmeta.get(i);
-            }
-            meta = newmeta;
-        }
-        return meta;
-    }
     
     public boolean isSimpleCuboid(List<BlockElement> elements) {
         for (BlockElement be : elements) {
@@ -485,19 +473,13 @@ public abstract class AbstractBlockScanBase {
         String[] tok = blkname.split(":");
         String modid = tok[0];
         String blknm = tok[1];
-        int[] meta = state.metadata;
         if (tok[0].equals("minecraft")) {   // Skip vanilla
-            return;
-        }
-        // Temporary hack to avoid registering metadata duplicates
-        meta = pruneDuplicateMeta(blkname, meta); 
-        if (meta.length == 0) {
             return;
         }
         // Get record for mod
         ModDynmapRec td = getModRec(modid);
         // Create block texture record
-        BlockTextureRecord btr = td.getBlockTxtRec(blknm, meta);
+        BlockTextureRecord btr = td.getBlockTxtRec(blknm,state.keyValuePairs);
         if (btr == null) {
             return;
         }
@@ -546,7 +528,7 @@ public abstract class AbstractBlockScanBase {
             }
         }
         // Get cuboid model
-        CuboidBlockModel mod = td.getCuboidModelRec(blknm, meta);
+        CuboidBlockModel mod = td.getCuboidModelRec(blknm, state.keyValuePairs);
         // Loop over elements
         int imgidx = 0;
         int[] cuboididx = new int[6];
@@ -585,23 +567,134 @@ public abstract class AbstractBlockScanBase {
         }
     }
 
-    public void registerDynmapPatches(String blkname, StateRec state, List<BlockElement> elems, WellKnownBlockClasses type) {
+    public void registerModelListModel(String blkname, StateRec state, List<BlockElement> elems, WellKnownBlockClasses type) {
         String[] tok = blkname.split(":");
         String modid = tok[0];
         String blknm = tok[1];
-        int[] meta = state.metadata;
         if (tok[0].equals("minecraft")) {   // Skip vanilla
-            return;
-        }
-        // Temporary hack to avoid registering metadata duplicates
-        meta = pruneDuplicateMeta(blkname, meta); 
-        if (meta.length == 0) {
             return;
         }
         // Get record for mod
         ModDynmapRec td = getModRec(modid);
         // Create block texture record
-        BlockTextureRecord btr = td.getBlockTxtRec(blknm, meta);
+        BlockTextureRecord btr = td.getBlockTxtRec(blknm, state.keyValuePairs);
+        if (btr == null) {
+            return;
+        }
+        // Check for tinting and/or culling
+        boolean tinting = false;   // Watch out for tinting
+        boolean culling = false;
+        for (BlockElement be : elems) {
+            for (BlockFace f : be.faces.values()) {
+                if (f.tintindex >= 0) {
+                    tinting = true;
+                    break;
+                }
+                if (f.cullface != null) {
+                    culling = true;
+                }
+            }
+        }
+        // Set to transparent (or semitransparent if culling)
+        if (culling) {
+            btr.setTransparencyMode(TransparencyMode.SEMITRANSPARENT);
+        }
+        else {
+            btr.setTransparencyMode(TransparencyMode.TRANSPARENT);
+        }
+        // If block has tinting, try to figure out what to use
+        if (tinting) {
+            String txtfile = null;
+            BlockTintOverride ovr = overrides.getTinting(modid, blknm, state.getProperties());
+            if (ovr == null) { // No match, need to guess
+                switch (type) {
+                case LEAVES:
+                case VINES:
+                    txtfile = "minecraft:colormap/foliage";
+                    break;
+                default:
+                    txtfile = "minecraft:colormap/grass";
+                    break;
+                }
+            }
+            else {
+                txtfile = ovr.colormap[0];
+            }
+            if (txtfile != null) {
+                TextureFile gtf = td.registerBiomeTexture(txtfile);
+                btr.setBlockColorMapTexture(gtf);
+            }
+        }
+        // Get model list model
+        ModelBlockModel mod = td.getModelBlockModelRec(blknm, state.keyValuePairs);
+        // Loop over elements
+        int imgidx = 0;
+        int[] cuboididx = new int[6];
+        for (BlockElement be : elems) {
+        	double xrot = 0, yrot = 0, zrot = 0;
+        	double[] origin = null;
+        	if (be.rotation != null) {
+        		if (be.rotation.axis != null) {
+        			if (be.rotation.axis.equals("x")) {
+        				xrot = be.rotation.angle;
+        			}
+        			else if (be.rotation.axis.equals("y")) {
+        				yrot = be.rotation.angle;
+        			}
+        			else if (be.rotation.axis.equals("z")) {
+        				zrot = be.rotation.angle;
+        			}
+        			if (be.rotation.origin != null) {
+        				origin = be.rotation.origin;
+        			}
+        		}
+        	}
+            ModelBlock modelem = mod.addModelBlock(be.from, be.to, xrot, yrot, zrot, be.shade, origin);
+            // Initialize to no texture for each side
+            for (int v = 0; v < cuboididx.length; v++) cuboididx[v] = -1;
+            // Loop over the images for the element
+            for (Entry<ElementFace, BlockFace> face : be.faces.entrySet()) {
+                ElementFace facing = face.getKey();
+                BlockFace f = face.getValue();
+                SideRotation rot = SideRotation.DEG0;
+                switch (f.rotation) {
+                	case 90:
+                		rot = SideRotation.DEG90;
+                		break;
+                	case 180:
+                		rot = SideRotation.DEG180;
+                		break;
+                	case 270:
+                		rot = SideRotation.DEG270;
+                		break;
+                }
+                if (f.texture != null) {
+                    TextureFile gtf = td.registerTexture(f.texture);
+                    int faceidx = (360-f.rotation);
+                    if (!be.uvlock) {
+                        faceidx = faceidx + f.facerotation;
+                    }
+                    TextureModifier tm = TextureModifier.NONE;
+                    cuboididx[facing.ordinal()] = imgidx;
+                    btr.setPatchTexture(gtf, tm, imgidx);
+                    imgidx++;
+                }
+                modelem.addBlockSide(facing.side, f.uv, rot, cuboididx[facing.ordinal()], f.tintindex);
+            }
+        }
+    }
+    
+    public void registerDynmapPatches(String blkname, StateRec state, List<BlockElement> elems, WellKnownBlockClasses type) {
+        String[] tok = blkname.split(":");
+        String modid = tok[0];
+        String blknm = tok[1];
+        if (tok[0].equals("minecraft")) {   // Skip vanilla
+            return;
+        }
+        // Get record for mod
+        ModDynmapRec td = getModRec(modid);
+        // Create block texture record
+        BlockTextureRecord btr = td.getBlockTxtRec(blknm, state.keyValuePairs);
         if (btr == null) {
             return;
         }
@@ -650,7 +743,7 @@ public abstract class AbstractBlockScanBase {
             }
         }
         // Get patch model
-        PatchBlockModel mod = td.getPatchModelRec(blknm, meta);
+        PatchBlockModel mod = td.getPatchModelRec(blknm, state.keyValuePairs);
         // Loop over elements
         int patchidx = 0;
         for (BlockElement be : elems) {
@@ -783,7 +876,7 @@ public abstract class AbstractBlockScanBase {
     
     protected BSBlockState loadBlockState(String modid, String respath, BlockStateOverrides override, Map<String, List<String>> propMap) {
     	BlockStateOverride ovr = override.getOverride(modid, respath);
-    	
+
     	if (ovr == null) {	// No override
     		return loadBlockStateFile(modid, respath);
     	}
@@ -839,6 +932,7 @@ public abstract class AbstractBlockScanBase {
         else {
     		logger.info(String.format("%s:%s : Failed to open blockstate", modid, path));
         }
+
         return bs;
     }
 	
@@ -853,8 +947,9 @@ public abstract class AbstractBlockScanBase {
                     for (VariantList vl : var.getValue()) {
                         if (vl.variantList.size() > 0) {
                             Variant va = vl.variantList.get(0);
-                            if(va.generateElements(models) == false) {
-                                logger.fine(va.toString() + ": failed to generate elements for " + blkname + "[" + var.getKey() + "]");
+                            
+                            if (va.generateElements(models) == false) {
+                                logger.debug(va.toString() + ": failed to generate elements for " + blkname + "[" + var.getKey() + "]");
                             }
                             else {
                                 elems.addAll(va.elements);
@@ -868,19 +963,24 @@ public abstract class AbstractBlockScanBase {
                             registerSimpleDynmapCubes(blkname, var.getKey(), elems.get(0), br.sc.getBlockType());
                         }
                     }
-                    // Else if simple cuboid
-                    else if (isSimpleCuboid(elems)) {
+                    else {
                         if (br.handler != null) {
-                            //logger.info(String.format("%s: %s is simple block with %s map",  blkname, var.getKey(), br.handler.getName()));
-                            registerSimpleDynmapCuboids(blkname, var.getKey(), elems, br.sc.getBlockType());
+                        	registerModelListModel(blkname, var.getKey(), elems, br.sc.getBlockType());
                         }
                     }
-                    else  {
-                        if (br.handler != null) {
-                            //logger.info(String.format("%s: %s is simple block with %s map",  blkname, var.getKey(), br.handler.getName()));
-                            registerDynmapPatches(blkname, var.getKey(), elems, br.sc.getBlockType());
-                        }
-                    }
+//                    // Else if simple cuboid
+//                    else if (isSimpleCuboid(elems)) {
+//                        if (br.handler != null) {
+//                            //logger.info(String.format("%s: %s is simple block with %s map",  blkname, var.getKey(), br.handler.getName()));
+//                            registerSimpleDynmapCuboids(blkname, var.getKey(), elems, br.sc.getBlockType());
+//                        }
+//                    }
+//                    else  {
+//                        if (br.handler != null) {
+//                            //logger.info(String.format("%s: %s is simple block with %s map",  blkname, var.getKey(), br.handler.getName()));
+//                            registerDynmapPatches(blkname, var.getKey(), elems, br.sc.getBlockType());
+//                        }
+//                    }
         		}
         	}
         }    	
@@ -990,21 +1090,34 @@ public abstract class AbstractBlockScanBase {
 	}
 	
     protected void resolveParentReferences(Map<String, BlockModel> models) {
-        LinkedList<BlockModel> modelToResolve = new LinkedList<BlockModel>(models.values());
+        LinkedList<String> modelToResolve = new LinkedList<String>(models.keySet());
         while (modelToResolve.isEmpty() == false) {
-        	BlockModel mod = modelToResolve.pop();
+        	String modelID = modelToResolve.pop();
+        	BlockModel mod = models.get(modelID);
+
+        	//logger.info("mod: " + modelID + "=" + gson.toJson(mod));
+
         	if (mod.parent != null) {	// If parent reference
         		String modid = mod.parent;
         		if (modid.indexOf(':') < 0) {
         			modid = "minecraft:" + modid;
         		}
+//        		logger.info("resolveParentReference: " + modid + " for " + modelID);
+//                if (modid.equals("minecraft:block/button")) {
+//                	logger.info("mod: " + modelID + "=" + gson.toJson(mod));
+//                }
+
         		mod.parentModel = models.get(modid);	// Look up: see if already loaded
+        		
         		if (mod.parentModel == null) {
 					String[] tok = modid.split(":");
 					mod.parentModel = loadBlockModelFile(tok[0], tok[1]);
 					models.put(modid, mod.parentModel);
-					modelToResolve.push(mod.parentModel);
+					modelToResolve.push(modid);
         		}
+        		
+            	//logger.info("mod (end): " + gson.toJson(mod));
+            	
         	}
         }
     }

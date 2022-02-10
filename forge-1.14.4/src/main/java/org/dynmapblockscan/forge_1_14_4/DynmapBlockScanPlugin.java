@@ -14,6 +14,7 @@ import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.dynmapblockscan.core.AbstractBlockScanBase;
+import org.dynmapblockscan.core.BlockScanLog;
 import org.dynmapblockscan.core.BlockStateOverrides.BlockStateOverride;
 import org.dynmapblockscan.core.blockstate.BSBlockState;
 import org.dynmapblockscan.core.blockstate.VariantList;
@@ -43,6 +44,7 @@ public class DynmapBlockScanPlugin extends AbstractBlockScanBase
     public DynmapBlockScanPlugin(MinecraftServer srv)
     {
         plugin = this;
+        logger = new OurLog();
     }
     
     public void buildAssetMap() {
@@ -242,7 +244,7 @@ public class DynmapBlockScanPlugin extends AbstractBlockScanBase
     	return bld.build();
     }
 
-    public static class OurLog {
+    public static class OurLog implements BlockScanLog {
         Logger log;
         public static final String DM = "";
         OurLog() {

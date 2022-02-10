@@ -52,7 +52,7 @@ public class ForgeStateContainer extends StateContainer {
 				if (renderprops.contains(pn)) {	// If valid render property
 					Comparable<?> v = bs.getValue(ent);
 					if (v instanceof IStringSerializable) {
-						v = ((IStringSerializable)v).toString();
+						v = ((IStringSerializable)v).getSerializedName();
 					}
 					bld.put(pn, v.toString());
 				}

@@ -1,5 +1,6 @@
 package org.dynmapblockscan.core.blockstate;
 
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
@@ -23,7 +24,7 @@ public class BaseCondition implements Condition {
 				if (bld == null) {
 					bld = new HashMap<String, String[]>();
 				}
-				bld.put(ent.getKey(), entval.split("|"));
+				bld.put(ent.getKey(), entval.split("\\|"));
 			}
 		}
 		if (bld != null) {

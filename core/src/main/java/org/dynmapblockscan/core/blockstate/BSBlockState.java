@@ -9,6 +9,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.Map.Entry;
 
+import org.dynmapblockscan.core.AbstractBlockScanBase;
 import org.dynmapblockscan.core.blockstate.BSBlockState;
 import org.dynmapblockscan.core.model.BlockModel;
 
@@ -43,10 +44,22 @@ public class BSBlockState {
 	public String toString() {
 		StringBuilder sb = new StringBuilder();
 		if (variants != null) {
-			sb.append("variants={").append(variants).append("}");
+			sb.append("variants={").append(variants).append("} ");
 		}
 		if (multipart != null) {
-			sb.append("multipart=[").append(multipart).append("]");
+			sb.append("multipart=[").append(multipart).append("] ");
+		}
+		if (nestedProp != null) {
+			sb.append("nestedProp=" + nestedProp + " ");
+		}
+		if (nestedValueMap != null) {
+			sb.append("nestedValueMap=[").append(nestedValueMap).append("] ");
+		}
+		if (defaults != null) {
+			sb.append("defaults=").append(defaults).append(" ");
+		}
+		if (forge_variants != null) {
+			sb.append("forge_variants=[").append(forge_variants).append("] ");			
 		}
 		return sb.toString();
 	}
@@ -155,8 +168,11 @@ public class BSBlockState {
             BSBlockState bs = new BSBlockState();
             // See if we have forge marker
             JsonObject obj = element.getAsJsonObject();
+            bs.forge_marker = 0;
             if (obj.has("forge_marker")) {
                 bs.forge_marker = obj.get("forge_marker").getAsInt();
+            }
+            if (bs.forge_marker == 1) {
                 if (obj.has("defaults")) {
                     bs.defaults = context.deserialize(obj.getAsJsonObject("defaults"), ForgeVariantV1.class);
                 }

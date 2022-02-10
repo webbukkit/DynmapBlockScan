@@ -22,8 +22,8 @@ import com.google.gson.JsonParseException;
 
 // Container for parsed JSON elements from block model
 public class BlockElement {
-    public float[] from;
-    public float[] to;
+    public double[] from;
+    public double[] to;
     public ElementRotation rotation = null;
     public Map<ElementFace, BlockFace> faces = Collections.emptyMap();
     public boolean shade = true;
@@ -69,12 +69,12 @@ public class BlockElement {
         mrot.transformVector(tovec);
         fromvec.add(centervect);   // Shift back 
         tovec.add(centervect);
-        from[0] = (float) Math.min(fromvec.x, tovec.x);
-        from[1] = (float) Math.min(fromvec.y, tovec.y);
-        from[2] = (float) Math.min(fromvec.z, tovec.z);
-        to[0] = (float) Math.max(fromvec.x, tovec.x);
-        to[1] = (float) Math.max(fromvec.y, tovec.y);
-        to[2] = (float) Math.max(fromvec.z, tovec.z);
+        from[0] = Math.min(fromvec.x, tovec.x);
+        from[1] = Math.min(fromvec.y, tovec.y);
+        from[2] = Math.min(fromvec.z, tovec.z);
+        to[0] = Math.max(fromvec.x, tovec.x);
+        to[1] = Math.max(fromvec.y, tovec.y);
+        to[2] = Math.max(fromvec.z, tovec.z);
         
         this.uvlock = uvlock;   // Remember uvlock
     }
@@ -119,10 +119,10 @@ public class BlockElement {
     		BlockElement be = new BlockElement();
     		JsonObject obj = element.getAsJsonObject();
     		if (obj.has("from")) {
-    			be.from = context.deserialize(obj.get("from"), float[].class);
+    			be.from = context.deserialize(obj.get("from"), double[].class);
     		}
     		if (obj.has("to")) {
-    			be.to = context.deserialize(obj.get("to"), float[].class);
+    			be.to = context.deserialize(obj.get("to"), double[].class);
     		}
     		if (obj.has("rotation")) {
     			be.rotation = context.deserialize(obj.get("rotation"), ElementRotation.class);

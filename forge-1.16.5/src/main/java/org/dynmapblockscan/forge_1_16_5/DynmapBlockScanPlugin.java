@@ -14,6 +14,7 @@ import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.dynmapblockscan.core.AbstractBlockScanBase;
+import org.dynmapblockscan.core.BlockScanLog;
 import org.dynmapblockscan.core.BlockStateOverrides.BlockStateOverride;
 import org.dynmapblockscan.core.blockstate.BSBlockState;
 import org.dynmapblockscan.core.blockstate.VariantList;
@@ -43,6 +44,7 @@ public class DynmapBlockScanPlugin extends AbstractBlockScanBase
     public DynmapBlockScanPlugin(MinecraftServer srv)
     {
         plugin = this;
+        logger = new OurLog();
     }
 
     public void buildAssetMap() {
@@ -220,7 +222,7 @@ public class DynmapBlockScanPlugin extends AbstractBlockScanBase
 			ArrayList<String> pvals = new ArrayList<String>();
 			for (Comparable<?> val : p.getPossibleValues()) {
 				if (val instanceof IStringSerializable) {
-					pvals.add(((IStringSerializable)val).toString());
+					pvals.add(((IStringSerializable)val).getSerializedName());
 				}
 				else {
 					pvals.add(val.toString());
@@ -237,7 +239,7 @@ public class DynmapBlockScanPlugin extends AbstractBlockScanBase
     	for (Property<?> x : bs.getProperties()) {
     	    Object v = bs.getValue(x);
     		if (v instanceof IStringSerializable) {
-    			bld.put(x.getName(), ((IStringSerializable)v).toString());
+    			bld.put(x.getName(), ((IStringSerializable)v).getSerializedName());
     		}
     		else {
     			bld.put(x.getName(), v.toString());
@@ -246,7 +248,7 @@ public class DynmapBlockScanPlugin extends AbstractBlockScanBase
     	return bld.build();
     }
     
-    public static class OurLog {
+    public static class OurLog implements BlockScanLog {
         Logger log;
         public static final String DM = "";
         OurLog() {
