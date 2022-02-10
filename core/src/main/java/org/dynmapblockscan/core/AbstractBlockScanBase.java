@@ -42,9 +42,6 @@ import org.dynmapblockscan.core.blockstate.VariantList;
 import org.dynmapblockscan.core.model.BlockElement;
 import org.dynmapblockscan.core.model.BlockFace;
 import org.dynmapblockscan.core.model.BlockModel;
-import org.dynmapblockscan.core.statehandlers.IStateHandler;
-import org.dynmapblockscan.core.statehandlers.IStateHandlerFactory;
-import org.dynmapblockscan.core.statehandlers.SimpleMetadataStateHandler;
 import org.dynmapblockscan.core.statehandlers.StateContainer;
 import org.dynmapblockscan.core.statehandlers.StateContainer.StateRec;
 import org.dynmapblockscan.core.statehandlers.StateContainer.WellKnownBlockClasses;
@@ -65,15 +62,10 @@ public abstract class AbstractBlockScanBase {
     	    
     //private Gson gson = new GsonBuilder().setPrettyPrinting().create();
     
-    protected IStateHandlerFactory[] state_handler = {
-        new SimpleMetadataStateHandler(false)
-    };
-
     public static class BlockRecord {
     	public StateContainer sc;
     	public Map<StateRec, List<VariantList>> varList;	// Model references for block
     	public Set<String> renderProps;	// Set of render properties
-    	public IStateHandler handler;		// Best handler
     }
 
     protected static class PathElement {
@@ -832,15 +824,11 @@ public abstract class AbstractBlockScanBase {
                     }
                     // If single simple full cube
                     if ((elems.size() == 1) && (elems.get(0).isSimpleBlock())) {
-                        if (br.handler != null) {
-                            //logger.info(String.format("%s: %s is simple block with %s map",  blkname, var.getKey(), br.handler.getName()));
-                            registerSimpleDynmapCubes(blkname, var.getKey(), elems.get(0), br.sc.getBlockType());
-                        }
+                        //logger.info(String.format("%s: %s is simple block with %s map",  blkname, var.getKey(), br.handler.getName()));
+                        registerSimpleDynmapCubes(blkname, var.getKey(), elems.get(0), br.sc.getBlockType());
                     }
                     else {
-                        if (br.handler != null) {
-                        	registerModelListModel(blkname, var.getKey(), elems, br.sc.getBlockType());
-                        }
+                    	registerModelListModel(blkname, var.getKey(), elems, br.sc.getBlockType());
                     }
         		}
         	}

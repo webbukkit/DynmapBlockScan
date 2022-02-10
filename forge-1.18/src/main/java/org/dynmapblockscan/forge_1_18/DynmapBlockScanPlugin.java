@@ -1,6 +1,5 @@
 package org.dynmapblockscan.forge_1_18;
 
-
 import java.io.File;
 import java.io.InputStream;
 import java.util.ArrayList;
@@ -20,7 +19,6 @@ import org.dynmapblockscan.core.BlockStateOverrides.BlockStateOverride;
 import org.dynmapblockscan.core.blockstate.BSBlockState;
 import org.dynmapblockscan.core.blockstate.VariantList;
 import org.dynmapblockscan.core.model.BlockModel;
-import org.dynmapblockscan.core.statehandlers.IStateHandlerFactory;
 import org.dynmapblockscan.core.statehandlers.StateContainer.StateRec;
 import org.dynmapblockscan.forge_1_18.statehandlers.ForgeStateContainer;
 
@@ -164,16 +162,6 @@ public class DynmapBlockScanPlugin extends AbstractBlockScanBase
         	    br.varList = Collections.emptyMap();
         	}
             // Check for matching handler
-            br.handler = null;
-            for (IStateHandlerFactory f : state_handler) {
-              	br.handler = f.canHandleBlockState(br.sc);
-                if (br.handler != null) {
-                    break;
-                }
-            }
-            if (br.handler == null) {
-                logger.info(rl + ":  NO MATCHING HANDLER");
-            }
             blockRecords.put(rl.toString(), br);
         }
         

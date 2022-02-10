@@ -164,17 +164,6 @@ public class DynmapBlockScanPlugin extends AbstractBlockScanBase
         	else {
         	    br.varList = Collections.emptyMap();
         	}
-            // Check for matching handler
-            br.handler = null;
-            for (IStateHandlerFactory f : state_handler) {
-              	br.handler = f.canHandleBlockState(br.sc);
-                if (br.handler != null) {
-                    break;
-                }
-            }
-            if (br.handler == null) {
-                logger.info(rl + ":  NO MATCHING HANDLER");
-            }
             blockRecords.put(rl.toString(), br);
         }
         
