@@ -6,7 +6,6 @@ plugins {
 
 allprojects  {
   repositories {
-     mavenLocal()
      maven { url "https://oss.sonatype.org/content/repositories/releases" }
      maven { url "https://repo.mikeprimm.com" }
      maven { url "https://repo.maven.apache.org/maven2" }
