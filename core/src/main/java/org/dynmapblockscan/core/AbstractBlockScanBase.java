@@ -492,9 +492,9 @@ public abstract class AbstractBlockScanBase {
         }
         // Get model list model
         ModelBlockModel mod = td.getModelBlockModelRec(blknm, state.keyValuePairs);
-        // Loop over elements
-        int imgidx = 0;
-        int[] cuboididx = new int[6];
+        // Start patch list
+        ArrayList<String> textures = new ArrayList<String>();
+        // Loop over elements        
         for (BlockElement be : elems) {
         	double xrot = 0, yrot = 0, zrot = 0;
         	double[] origin = null;
@@ -516,8 +516,6 @@ public abstract class AbstractBlockScanBase {
         	}
             ModelBlock modelem = mod.addModelBlock(be.from, be.to, xrot, yrot, zrot, be.shade, origin,
             		be.modelrot.rotX, be.modelrot.rotY, be.modelrot.rotZ);
-            // Initialize to no texture for each side
-            for (int v = 0; v < cuboididx.length; v++) cuboididx[v] = -1;
             // Loop over the images for the element
             for (Entry<ElementFace, BlockFace> face : be.faces.entrySet()) {
                 ElementFace facing = face.getKey();
@@ -534,18 +532,17 @@ public abstract class AbstractBlockScanBase {
                 		rot = SideRotation.DEG270;
                 		break;
                 }
+                int txtidx = -1;
                 if (f.texture != null) {
-                    TextureFile gtf = td.registerTexture(f.texture);
-                    int faceidx = (360-f.rotation);
-                    if (!be.uvlock) {
-                        faceidx = faceidx + f.facerotation;
-                    }
-                    TextureModifier tm = TextureModifier.NONE;
-                    cuboididx[facing.ordinal()] = imgidx;
-                    btr.setPatchTexture(gtf, tm, imgidx);
-                    imgidx++;
+                	txtidx = textures.indexOf(f.texture);	// See if already registered
+                	if (txtidx < 0) {
+                		txtidx = textures.size();
+                        textures.add(f.texture);	// Add to list
+                		TextureFile gtf = td.registerTexture(f.texture);	// Register if needed
+                        btr.setPatchTexture(gtf, TextureModifier.NONE, txtidx);	// And set texture to assigned index
+                	}
                 }
-                modelem.addBlockSide(facing.side, f.uv, rot, cuboididx[facing.ordinal()], f.tintindex);
+                modelem.addBlockSide(facing.side, f.uv, rot, txtidx, f.tintindex);
             }
         }
     }

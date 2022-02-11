@@ -239,7 +239,7 @@ public class DynmapBlockScanPlugin extends AbstractBlockScanBase
     
     public static class OurLog implements BlockScanLog {
         Logger log;
-        public static final String DM = "";
+        public static final String DM = "[DynmapBlockScan] ";
         OurLog() {
             log = LogManager.getLogger("DynmapBlockScan");
         }
