@@ -59,6 +59,8 @@ public abstract class AbstractBlockScanBase {
 	public static BlockScanLog logger;
     public static boolean verboselogging = false;
     protected BlockStateOverrides overrides;
+    public Set<String> disabledModules = new HashSet<String>();
+    public Set<String> disabledBlockNames = new HashSet<String>();
     	    
     //private Gson gson = new GsonBuilder().setPrettyPrinting().create();
     
@@ -143,6 +145,22 @@ public abstract class AbstractBlockScanBase {
     	return m.get(tok[tok.length - 1]);
     }
     
+    public void setDisabledModules(List<String> modules) {
+    	disabledModules.addAll(modules);
+    }
+
+    public void setDisabledBlockNames(List<String> blocknames) {
+    	disabledBlockNames.addAll(blocknames);
+    }
+
+    public boolean isDisabledModule(String modid) {
+    	return disabledModules.contains(modid);
+    }
+
+    public boolean isDisabledBlockName(String blockname) {
+    	return disabledBlockNames.contains(blockname);
+    }
+
     protected String scanForElement(Map<String, PathElement> m, String base, String fname) {
     	for (Entry<String, PathElement> me : m.entrySet()) {
     		PathElement p = me.getValue();
@@ -363,7 +381,7 @@ public abstract class AbstractBlockScanBase {
     	String modid = tok[0];
     	String blknm = tok[1];
 
-    	if (tok[0].equals("minecraft")) {	// Skip vanilla
+    	if (isDisabledModule(modid) || isDisabledBlockName(blkname)) {
     		return;
     	}
     	// Get record for mod
@@ -436,7 +454,7 @@ public abstract class AbstractBlockScanBase {
         String[] tok = blkname.split(":");
         String modid = tok[0];
         String blknm = tok[1];
-        if (tok[0].equals("minecraft")) {   // Skip vanilla
+        if (isDisabledModule(modid) || isDisabledBlockName(blkname)) {   // Skip vanilla
             return;
         }
         // Get record for mod
@@ -551,7 +569,7 @@ public abstract class AbstractBlockScanBase {
         String[] tok = blkname.split(":");
         String modid = tok[0];
         String blknm = tok[1];
-        if (tok[0].equals("minecraft")) {   // Skip vanilla
+        if (isDisabledModule(modid) || isDisabledBlockName(blkname)) {   // Skip vanilla
             return;
         }
         // Get record for mod

@@ -1,9 +1,11 @@
 package org.dynmapblockscan.forge_1_18;
 
 import java.io.File;
-import java.util.Map;
+import java.util.Arrays;
+import java.util.List;
 
 import net.minecraft.server.MinecraftServer;
+import net.minecraftforge.common.ForgeConfigSpec;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.server.ServerStartedEvent;
 import net.minecraftforge.event.server.ServerStartingEvent;
@@ -11,9 +13,12 @@ import net.minecraftforge.event.server.ServerStoppingEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.DistExecutor;
 import net.minecraftforge.fml.ModList;
+import net.minecraftforge.fml.ModLoadingContext;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
+import net.minecraftforge.fml.loading.FMLPaths;
+import net.minecraftforge.fml.loading.FileUtils;
 
 @Mod("dynmapblockscan")
 public class DynmapBlockScanMod
@@ -33,22 +38,34 @@ public class DynmapBlockScanMod
         FMLJavaModLoadingContext.get().getModEventBus().addListener(this::setup);
 
         MinecraftForge.EVENT_BUS.register(this);
+
+        FileUtils.getOrCreateDirectory(FMLPaths.CONFIGDIR.get().resolve("dynmapblockscan"), "dynmapblockscan");
+        ModLoadingContext.get().registerConfig(net.minecraftforge.fml.config.ModConfig.Type.COMMON, SettingsConfig.SPEC, "dynmapblockscan/settings.toml");
     }
     
-    public void setup(final FMLCommonSetupEvent event) {
-        jarfile = ModList.get().getModFileById("dynmapblockscan").getFile().getFilePath().toFile();
+    public static class SettingsConfig
+    {
+        public static final ForgeConfigSpec.Builder BUILDER = new ForgeConfigSpec.Builder();
+        public static final ForgeConfigSpec SPEC;
 
-        // Load configuration file - use suggested (config/DynmapBlockScan.cfg)
-//        Configuration cfg = new Configuration(event.getSuggestedConfigurationFile());
-//        try {
-//            cfg.load();
-//            
-//           verboselogging = cfg.get("Settings",  "verboselog", false).getBoolean(false);
-//        }
-//        finally
-//        {
-//            cfg.save();
-//        }
+        public static final ForgeConfigSpec.ConfigValue<List<? extends String>> excludeModules;
+        public static final ForgeConfigSpec.ConfigValue<List<? extends String>> excludeBlockNames;
+
+        static
+        {
+            BUILDER.comment("DynmapBlockScan settings");
+            BUILDER.push("settings");
+            excludeModules = BUILDER.comment("Which modules to exclude").defineList("exclude_modules", Arrays.asList("minecraft"), entry -> true);
+            excludeBlockNames = BUILDER.comment("Which block names to exclude").defineList("exclude_blocknames", Arrays.asList(), entry -> true);
+            BUILDER.pop();
+
+            SPEC = BUILDER.build();
+        }
+    }
+
+    public void setup(final FMLCommonSetupEvent event) {
+    	logger.info("setup");
+        jarfile = ModList.get().getModFileById("dynmapblockscan").getFile().getFilePath().toFile();
     }
 
     private MinecraftServer server;
@@ -58,6 +75,8 @@ public class DynmapBlockScanMod
         server = event.getServer();
         if(plugin == null)
             plugin = proxy.startServer(server);
+        plugin.setDisabledModules((List<String>) SettingsConfig.excludeModules.get());
+        plugin.setDisabledBlockNames((List<String>) SettingsConfig.excludeBlockNames.get());
         plugin.serverStarting();
     }
     

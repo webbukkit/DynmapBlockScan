@@ -19,7 +19,6 @@ import org.dynmapblockscan.core.BlockStateOverrides.BlockStateOverride;
 import org.dynmapblockscan.core.blockstate.BSBlockState;
 import org.dynmapblockscan.core.blockstate.VariantList;
 import org.dynmapblockscan.core.model.BlockModel;
-import org.dynmapblockscan.core.statehandlers.IStateHandlerFactory;
 import org.dynmapblockscan.core.statehandlers.StateContainer.StateRec;
 import org.dynmapblockscan.forge_1_16_5.statehandlers.ForgeStateContainer;
 
@@ -40,7 +39,7 @@ import net.minecraftforge.fml.loading.moddiscovery.ModInfo;
 public class DynmapBlockScanPlugin extends AbstractBlockScanBase
 {
     public static DynmapBlockScanPlugin plugin;
-    
+        
     public DynmapBlockScanPlugin(MinecraftServer srv)
     {
         plugin = this;
