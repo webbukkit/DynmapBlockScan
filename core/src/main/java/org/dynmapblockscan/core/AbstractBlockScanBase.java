@@ -53,6 +53,7 @@ import com.google.gson.GsonBuilder;
 import com.google.gson.JsonIOException;
 import com.google.gson.JsonSyntaxException;
 import com.google.gson.stream.JsonReader;
+
 import java.nio.charset.StandardCharsets;
 
 public abstract class AbstractBlockScanBase {
@@ -61,13 +62,91 @@ public abstract class AbstractBlockScanBase {
     protected BlockStateOverrides overrides;
     public Set<String> disabledModules = new HashSet<String>();
     public Set<String> disabledBlockNames = new HashSet<String>();
-    	    
+
+    public enum MaterialColorID {
+    	NONE(0),
+        GRASS(1),
+        SAND(2),
+        WOOL(3),
+        FIRE(4),
+        ICE(5),
+        METAL(6),
+        PLANT(7),
+        SNOW(8),
+        CLAY(9),
+        DIRT(10),
+        STONE(11),
+        WATER(12),
+        WOOD(13),
+        QUARTZ(14),
+        COLOR_ORANGE(15),
+        COLOR_MAGENTA(16),
+        COLOR_LIGHT_BLUE(17),
+        COLOR_YELLOW(18),
+        COLOR_LIGHT_GREEN(19),
+        COLOR_PINK(20),
+        COLOR_GRAY(21),
+        COLOR_LIGHT_GRAY(22),
+        COLOR_CYAN(23),
+        COLOR_PURPLE(24),
+        COLOR_BLUE(25),
+        COLOR_BROWN(26),
+        COLOR_GREEN(27),
+        COLOR_RED(28),
+        COLOR_BLACK(29),
+        GOLD(30),
+        DIAMOND(31),
+        LAPIS(32),
+        EMERALD(33),
+        PODZOL(34),
+        NETHER(35),
+        TERRACOTTA_WHITE(36),
+        TERRACOTTA_ORANGE(37),
+        TERRACOTTA_MAGENTA(38),
+        TERRACOTTA_LIGHT_BLUE(39),
+        TERRACOTTA_YELLOW(40),
+        TERRACOTTA_LIGHT_GREEN(41),
+        TERRACOTTA_PINK(42),
+        TERRACOTTA_GRAY(43),
+        TERRACOTTA_LIGHT_GRAY(44),
+        TERRACOTTA_CYAN(45),
+        TERRACOTTA_PURPLE(46),
+        TERRACOTTA_BLUE(47),
+        TERRACOTTA_BROWN(48),
+        TERRACOTTA_GREEN(49),
+        TERRACOTTA_RED(50),
+        TERRACOTTA_BLACK(51),
+        CRIMSON_NYLIUM(52),
+        CRIMSON_STEM(53),
+        CRIMSON_HYPHAE(54),
+        WARPED_NYLIUM(55),
+        WARPED_STEM(56),
+        WARPED_HYPHAE(57),
+        WARPED_WART_BLOCK(58),
+        DEEPSLATE(59),
+        RAW_IRON(60),
+        GLOW_LICHEN(61);
+    	
+    	public int colorID;
+    	
+    	MaterialColorID(int id) {
+    		colorID = id;
+    	}
+    	public static MaterialColorID byID(int id) {
+    		for (MaterialColorID v : values()) {
+    			if (v.colorID == id) return v;
+    		}
+    		return null;
+    	}
+    }
+
     //private Gson gson = new GsonBuilder().setPrettyPrinting().create();
     
     public static class BlockRecord {
     	public StateContainer sc;
     	public Map<StateRec, List<VariantList>> varList;	// Model references for block
     	public Set<String> renderProps;	// Set of render properties
+    	public MaterialColorID materialColorID;
     }
 
     protected static class PathElement {
@@ -376,7 +455,8 @@ public abstract class AbstractBlockScanBase {
     
     }
 
-    public void registerSimpleDynmapCubes(String blkname, StateRec state, BlockElement element, WellKnownBlockClasses type) {
+    public void registerSimpleDynmapCubes(String blkname, StateRec state, BlockElement element, WellKnownBlockClasses type,
+		MaterialColorID materialColorID) {
     	String[] tok = blkname.split(":");
     	String modid = tok[0];
     	String blknm = tok[1];
@@ -403,11 +483,11 @@ public abstract class AbstractBlockScanBase {
             String txtfile = null;
             BlockTintOverride ovr = overrides.getTinting(modid, blknm, state.getProperties());
             if (ovr == null) { // No match, need to guess
-                switch (type) {
-                    case LEAVES:
-                    case VINES:
+                switch (materialColorID) {
+                    case PLANT:
                         txtfile = "minecraft:colormap/foliage";
                         break;
+                    case GRASS:
                     default:
                         txtfile = "minecraft:colormap/grass";
                         break;
@@ -450,7 +530,8 @@ public abstract class AbstractBlockScanBase {
     	}
     }
     
-    public void registerModelListModel(String blkname, StateRec state, List<BlockElement> elems, WellKnownBlockClasses type) {
+    public void registerModelListModel(String blkname, StateRec state, List<BlockElement> elems, WellKnownBlockClasses type, 
+		MaterialColorID materialColorID) {
         String[] tok = blkname.split(":");
         String modid = tok[0];
         String blknm = tok[1];
@@ -490,14 +571,14 @@ public abstract class AbstractBlockScanBase {
             String txtfile = null;
             BlockTintOverride ovr = overrides.getTinting(modid, blknm, state.getProperties());
             if (ovr == null) { // No match, need to guess
-                switch (type) {
-                case LEAVES:
-                case VINES:
-                    txtfile = "minecraft:colormap/foliage";
-                    break;
-                default:
-                    txtfile = "minecraft:colormap/grass";
-                    break;
+                switch (materialColorID) {
+	                case PLANT:
+	                    txtfile = "minecraft:colormap/foliage";
+	                    break;
+	                case GRASS:
+	                default:
+	                    txtfile = "minecraft:colormap/grass";
+	                    break;
                 }
             }
             else {
@@ -757,12 +838,12 @@ public abstract class AbstractBlockScanBase {
     
     protected BSBlockState loadBlockState(String modid, String respath, BlockStateOverrides override, Map<String, List<String>> propMap) {
     	BlockStateOverride ovr = override.getOverride(modid, respath);
-
+    	BSBlockState bs = null;
     	if (ovr == null) {	// No override
-    		return loadBlockStateFile(modid, respath);
+    		bs = loadBlockStateFile(modid, respath);
     	}
     	else if (ovr.blockStateName != null) {	// Simple override
-    		return loadBlockStateFile(modid, ovr.blockStateName);
+    		bs = loadBlockStateFile(modid, ovr.blockStateName);
     	}
     	else if (ovr.baseNameProperty != null) {	// MUltiple files based on base property
     		List<String> vals = propMap.get(ovr.baseNameProperty);	// Look up defned values
@@ -770,7 +851,7 @@ public abstract class AbstractBlockScanBase {
     			logger.warning(String.format("%s:%s : bad baseNameProperty=%s",  modid, respath, ovr.baseNameProperty));;
     			return null;
     		}
-    		BSBlockState bs = new BSBlockState();
+    		bs = new BSBlockState();
     		bs.nestedProp = ovr.baseNameProperty;
     		bs.nestedValueMap = new HashMap<String, BSBlockState>();
     		for (String v : vals) {
@@ -779,10 +860,8 @@ public abstract class AbstractBlockScanBase {
     				bs.nestedValueMap.put(v,  bs2);
     			}
     		}
-    		return bs;
     	}
-
-		return null;
+		return bs;
     }
 	protected BSBlockState loadBlockStateFile(String modid, String respath) {
     	// Default path
@@ -840,10 +919,10 @@ public abstract class AbstractBlockScanBase {
                     // If single simple full cube
                     if ((elems.size() == 1) && (elems.get(0).isSimpleBlock())) {
                         //logger.info(String.format("%s: %s is simple block with %s map",  blkname, var.getKey(), br.handler.getName()));
-                        registerSimpleDynmapCubes(blkname, var.getKey(), elems.get(0), br.sc.getBlockType());
+                        registerSimpleDynmapCubes(blkname, var.getKey(), elems.get(0), br.sc.getBlockType(), br.materialColorID);
                     }
                     else {
-                    	registerModelListModel(blkname, var.getKey(), elems, br.sc.getBlockType());
+                    	registerModelListModel(blkname, var.getKey(), elems, br.sc.getBlockType(), br.materialColorID);
                     }
         		}
         	}

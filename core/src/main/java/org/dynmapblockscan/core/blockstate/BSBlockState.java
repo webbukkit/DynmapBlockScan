@@ -39,7 +39,7 @@ public class BSBlockState {
 	// Property value based nested state mapping
 	public String nestedProp = null;
 	public Map<String, BSBlockState> nestedValueMap = null;
-	
+		
 	public String toString() {
 		StringBuilder sb = new StringBuilder();
 		if (variants != null) {

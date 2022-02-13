@@ -15,6 +15,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.dynmapblockscan.core.AbstractBlockScanBase;
 import org.dynmapblockscan.core.BlockScanLog;
+import org.dynmapblockscan.core.AbstractBlockScanBase.MaterialColorID;
 import org.dynmapblockscan.core.BlockStateOverrides.BlockStateOverride;
 import org.dynmapblockscan.core.blockstate.BSBlockState;
 import org.dynmapblockscan.core.blockstate.VariantList;
@@ -31,6 +32,8 @@ import net.minecraft.util.StringRepresentable;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.Property;
+import net.minecraft.world.level.material.Material;
+import net.minecraft.world.level.material.MaterialColor;
 import net.minecraftforge.fml.ModContainer;
 import net.minecraftforge.fml.ModList;
 import net.minecraftforge.forgespi.language.IModFileInfo;
@@ -134,12 +137,15 @@ public class DynmapBlockScanPlugin extends AbstractBlockScanBase
             // Generate property value map
             Map<String, List<String>> propMap = buildPropoertyMap(bsc);
             // Try to find blockstate file
+            Material mat = blkstate.getMaterial();
+            MaterialColor matcol = mat.getColor();
             BSBlockState blockstate = loadBlockState(rl.getNamespace(), rl.getPath(), overrides, propMap);
             // Build block record
             BlockRecord br = new BlockRecord();
             // Process blockstate
         	if (blockstate != null) {
                 br.renderProps = blockstate.getRenderProps();
+                br.materialColorID = MaterialColorID.byID(matcol.id);
         	}
         	// Build generic block state container for block
         	br.sc = new ForgeStateContainer(b, br.renderProps, propMap);

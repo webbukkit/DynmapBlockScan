@@ -15,6 +15,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.dynmapblockscan.core.AbstractBlockScanBase;
 import org.dynmapblockscan.core.BlockScanLog;
+import org.dynmapblockscan.core.AbstractBlockScanBase.MaterialColorID;
 import org.dynmapblockscan.core.BlockStateOverrides.BlockStateOverride;
 import org.dynmapblockscan.core.blockstate.BSBlockState;
 import org.dynmapblockscan.core.blockstate.VariantList;
@@ -26,6 +27,8 @@ import org.dynmapblockscan.forge_1_15_2.statehandlers.ForgeStateContainer;
 import com.google.common.collect.ImmutableMap;
 
 import net.minecraft.block.Block;
+import net.minecraft.block.material.Material;
+import net.minecraft.block.material.MaterialColor;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.state.IProperty;
 import net.minecraft.util.IStringSerializable;
@@ -131,12 +134,15 @@ public class DynmapBlockScanPlugin extends AbstractBlockScanBase
             // Generate property value map
             Map<String, List<String>> propMap = buildPropoertMap(bsc);
             // Try to find blockstate file
+            Material mat = blkstate.getMaterial();
+            MaterialColor matcol = mat.getColor();
             BSBlockState blockstate = loadBlockState(rl.getNamespace(), rl.getPath(), overrides, propMap);
             // Build block record
             BlockRecord br = new BlockRecord();
             // Process blockstate
         	if (blockstate != null) {
                 br.renderProps = blockstate.getRenderProps();
+                br.materialColorID = MaterialColorID.byID(matcol.id);
         	}
         	// Build generic block state container for block
         	br.sc = new ForgeStateContainer(b, br.renderProps, propMap);
