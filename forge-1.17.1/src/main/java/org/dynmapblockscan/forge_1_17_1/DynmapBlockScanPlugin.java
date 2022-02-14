@@ -16,21 +16,21 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.dynmapblockscan.core.AbstractBlockScanBase;
 import org.dynmapblockscan.core.BlockScanLog;
-import org.dynmapblockscan.core.AbstractBlockScanBase.MaterialColorID;
 import org.dynmapblockscan.core.BlockStateOverrides.BlockStateOverride;
 import org.dynmapblockscan.core.blockstate.BSBlockState;
 import org.dynmapblockscan.core.blockstate.VariantList;
 import org.dynmapblockscan.core.model.BlockModel;
-import org.dynmapblockscan.core.statehandlers.IStateHandlerFactory;
 import org.dynmapblockscan.core.statehandlers.StateContainer.StateRec;
 import org.dynmapblockscan.forge_1_17_1.statehandlers.ForgeStateContainer;
 
 import com.google.common.collect.ImmutableMap;
 
+import net.minecraft.core.BlockPos;
 import net.minecraft.core.IdMapper;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.util.StringRepresentable;
+import net.minecraft.world.level.EmptyBlockGetter;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.Property;
@@ -149,6 +149,13 @@ public class DynmapBlockScanPlugin extends AbstractBlockScanBase
         	if (blockstate != null) {
                 br.renderProps = blockstate.getRenderProps();
                 br.materialColorID = MaterialColorID.byID(matcol.id);
+                br.lightAttenuation = 15;
+                try {	// Workaround for mods with broken block state logic...
+                	br.lightAttenuation = blkstate.isSolidRender(EmptyBlockGetter.INSTANCE, BlockPos.ZERO) ? 15 : (blkstate.propagatesSkylightDown(EmptyBlockGetter.INSTANCE, BlockPos.ZERO) ? 0 : 1);
+                } catch (Exception x) {
+                	logger.warning(String.format("Exception while checking lighting data for block state: %s", blkstate));
+                	logger.verboseinfo("Exception: " + x.toString());
+                }
         	}
         	// Build generic block state container for block
         	br.sc = new ForgeStateContainer(b, br.renderProps, propMap);

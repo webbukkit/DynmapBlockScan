@@ -15,12 +15,10 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.dynmapblockscan.core.AbstractBlockScanBase;
 import org.dynmapblockscan.core.BlockScanLog;
-import org.dynmapblockscan.core.AbstractBlockScanBase.MaterialColorID;
 import org.dynmapblockscan.core.BlockStateOverrides.BlockStateOverride;
 import org.dynmapblockscan.core.blockstate.BSBlockState;
 import org.dynmapblockscan.core.blockstate.VariantList;
 import org.dynmapblockscan.core.model.BlockModel;
-import org.dynmapblockscan.core.statehandlers.IStateHandlerFactory;
 import org.dynmapblockscan.core.statehandlers.StateContainer.StateRec;
 import org.dynmapblockscan.forge_1_15_2.statehandlers.ForgeStateContainer;
 
@@ -34,6 +32,8 @@ import net.minecraft.state.IProperty;
 import net.minecraft.util.IStringSerializable;
 import net.minecraft.util.ObjectIntIdentityMap;
 import net.minecraft.util.ResourceLocation;
+import net.minecraft.util.math.BlockPos;
+import net.minecraft.world.EmptyBlockReader;
 import net.minecraftforge.fml.ModContainer;
 import net.minecraftforge.fml.ModList;
 import net.minecraftforge.fml.loading.moddiscovery.ModFile;
@@ -143,6 +143,13 @@ public class DynmapBlockScanPlugin extends AbstractBlockScanBase
         	if (blockstate != null) {
                 br.renderProps = blockstate.getRenderProps();
                 br.materialColorID = MaterialColorID.byID(matcol.id);
+                br.lightAttenuation = 15;
+                try {	// Workaround for mods with broken block state logic...
+                	br.lightAttenuation = blkstate.isSolidRender(EmptyBlockReader.INSTANCE, BlockPos.ZERO) ? 15 : (blkstate.propagatesSkylightDown(EmptyBlockReader.INSTANCE, BlockPos.ZERO) ? 0 : 1);
+                } catch (Exception x) {
+                	logger.warning(String.format("Exception while checking lighting data for block state: %s", blkstate));
+                	logger.verboseinfo("Exception: " + x.toString());
+                }
         	}
         	// Build generic block state container for block
         	br.sc = new ForgeStateContainer(b, br.renderProps, propMap);

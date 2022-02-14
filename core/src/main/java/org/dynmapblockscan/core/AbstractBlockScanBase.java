@@ -147,6 +147,7 @@ public abstract class AbstractBlockScanBase {
     	public Map<StateRec, List<VariantList>> varList;	// Model references for block
     	public Set<String> renderProps;	// Set of render properties
     	public MaterialColorID materialColorID;
+    	public int lightAttenuation;
     }
 
     protected static class PathElement {
@@ -456,7 +457,7 @@ public abstract class AbstractBlockScanBase {
     }
 
     public void registerSimpleDynmapCubes(String blkname, StateRec state, BlockElement element, WellKnownBlockClasses type,
-		MaterialColorID materialColorID) {
+		MaterialColorID materialColorID, int lightAtten) {
     	String[] tok = blkname.split(":");
     	String modid = tok[0];
     	String blknm = tok[1];
@@ -470,6 +471,16 @@ public abstract class AbstractBlockScanBase {
     	BlockTextureRecord btr = td.getBlockTxtRec(blknm, state.keyValuePairs);
     	if (btr == null) {
     		return;
+    	}
+    	// If not light blocking
+    	if (lightAtten == 0) {
+    		btr.setTransparencyMode(TransparencyMode.TRANSPARENT);
+    	}
+    	else if (lightAtten == 15) {
+    		btr.setTransparencyMode(TransparencyMode.OPAQUE);
+    	}
+    	else {
+    		btr.setTransparencyMode(TransparencyMode.SEMITRANSPARENT);    		
     	}
     	boolean tinting = false;   // Watch out for tinting
         for (BlockFace f : element.faces.values()) {
@@ -531,7 +542,7 @@ public abstract class AbstractBlockScanBase {
     }
     
     public void registerModelListModel(String blkname, StateRec state, List<BlockElement> elems, WellKnownBlockClasses type, 
-		MaterialColorID materialColorID) {
+		MaterialColorID materialColorID, int lightAtten) {
         String[] tok = blkname.split(":");
         String modid = tok[0];
         String blknm = tok[1];
@@ -547,37 +558,42 @@ public abstract class AbstractBlockScanBase {
         }
         // Check for tinting and/or culling
         boolean tinting = false;   // Watch out for tinting
-        boolean culling = false;
         for (BlockElement be : elems) {
             for (BlockFace f : be.faces.values()) {
                 if (f.tintindex >= 0) {
                     tinting = true;
                     break;
                 }
-                if (f.cullface != null) {
-                    culling = true;
-                }
             }
         }
-        // Set to transparent (or semitransparent if culling)
-        if (culling) {
-            btr.setTransparencyMode(TransparencyMode.SEMITRANSPARENT);
-        }
-        else {
-            btr.setTransparencyMode(TransparencyMode.TRANSPARENT);
-        }
+    	// If not light blocking
+    	if (lightAtten == 0) {
+    		btr.setTransparencyMode(TransparencyMode.TRANSPARENT);
+    	}
+    	else if (lightAtten == 15) {
+    		btr.setTransparencyMode(TransparencyMode.OPAQUE);
+    	}
+    	else {
+    		btr.setTransparencyMode(TransparencyMode.SEMITRANSPARENT);    		
+    	}
         // If block has tinting, try to figure out what to use
+        TextureModifier tintmodifier = TextureModifier.NONE;
         if (tinting) {
             String txtfile = null;
             BlockTintOverride ovr = overrides.getTinting(modid, blknm, state.getProperties());
             if (ovr == null) { // No match, need to guess
                 switch (materialColorID) {
 	                case PLANT:
-	                    txtfile = "minecraft:colormap/foliage";
+	                	tintmodifier = TextureModifier.FOLIAGETONED;
+	                    break;
+	                case WATER:
+	                	tintmodifier = TextureModifier.WATERTONED;
 	                    break;
 	                case GRASS:
+	                	tintmodifier = TextureModifier.GRASSTONED;
+	                	break;
 	                default:
-	                    txtfile = "minecraft:colormap/grass";
+	                	tintmodifier = TextureModifier.GRASSTONED;
 	                    break;
                 }
             }
@@ -638,7 +654,7 @@ public abstract class AbstractBlockScanBase {
                 		txtidx = textures.size();
                         textures.add(f.texture);	// Add to list
                 		TextureFile gtf = td.registerTexture(f.texture);	// Register if needed
-                        btr.setPatchTexture(gtf, TextureModifier.NONE, txtidx);	// And set texture to assigned index
+                        btr.setPatchTexture(gtf, (f.tintindex >= 0) ? tintmodifier : TextureModifier.NONE, txtidx);	// And set texture to assigned index
                 	}
                 }
                 modelem.addBlockSide(facing.side, f.uv, rot, txtidx, f.tintindex);
@@ -919,10 +935,10 @@ public abstract class AbstractBlockScanBase {
                     // If single simple full cube
                     if ((elems.size() == 1) && (elems.get(0).isSimpleBlock())) {
                         //logger.info(String.format("%s: %s is simple block with %s map",  blkname, var.getKey(), br.handler.getName()));
-                        registerSimpleDynmapCubes(blkname, var.getKey(), elems.get(0), br.sc.getBlockType(), br.materialColorID);
+                        registerSimpleDynmapCubes(blkname, var.getKey(), elems.get(0), br.sc.getBlockType(), br.materialColorID, br.lightAttenuation);
                     }
                     else {
-                    	registerModelListModel(blkname, var.getKey(), elems, br.sc.getBlockType(), br.materialColorID);
+                    	registerModelListModel(blkname, var.getKey(), elems, br.sc.getBlockType(), br.materialColorID, br.lightAttenuation);
                     }
         		}
         	}
