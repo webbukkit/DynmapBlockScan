@@ -32,8 +32,8 @@ public class BlockFace {
     public boolean isFullFace() {
     	if (cullface == null) return false;
     	if (uv != null) {
-    		if ((Math.min(uv[0], uv[2]) != 0.0F) || (Math.max(uv[0], uv[2]) != 16.0F) ||
-				(Math.min(uv[1], uv[3]) != 0.0F) || (Math.max(uv[1], uv[3]) != 16.0F)) {
+    		if ((uv[0] != 0.0F) || (uv[2] != 16.0F) ||
+				(uv[1] != 0.0F) || (uv[3] != 16.0F)) {
     			return false;
     		}
     	}
