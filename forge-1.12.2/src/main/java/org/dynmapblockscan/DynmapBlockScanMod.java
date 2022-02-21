@@ -27,7 +27,7 @@ public class DynmapBlockScanMod
     public static DynmapBlockScanMod instance;
 
     // Says where the client and server 'proxy' code is loaded.
-    @SidedProxy(clientSide = "org.dynmap.blockscan.ClientProxy", serverSide = "org.dynmap.blockscan.Proxy")
+    @SidedProxy(clientSide = "org.dynmapblockscan.ClientProxy", serverSide = "org.dynmapblockscan.Proxy")
     public static Proxy proxy;
     
     public static DynmapBlockScanPlugin plugin;

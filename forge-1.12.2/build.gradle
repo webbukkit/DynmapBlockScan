@@ -22,7 +22,7 @@ apply plugin: 'eclipse'
 
 eclipse {
     project {
-        name = "DynmapBlockScan(Forge-1.12.2)"
+        name = "DynmapBlockScan(Forge-Legacy-1.12.2)"
     }
 }
 
