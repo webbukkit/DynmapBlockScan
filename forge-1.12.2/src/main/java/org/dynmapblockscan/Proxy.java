@@ -1,4 +1,4 @@
-package org.dynmap.blockscan;
+package org.dynmapblockscan;
 
 import net.minecraft.server.MinecraftServer;
 

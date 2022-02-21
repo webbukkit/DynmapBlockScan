@@ -1,4 +1,4 @@
-package org.dynmap.blockscan;
+package org.dynmapblockscan;
 
 public class Version {
     public static final String VER = "@VERSION@";

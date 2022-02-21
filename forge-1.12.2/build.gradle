@@ -18,6 +18,13 @@ buildscript {
 }
 
 apply plugin: 'net.minecraftforge.gradle.forge'
+apply plugin: 'eclipse'
+
+eclipse {
+    project {
+        name = "DynmapBlockScan(Forge-1.12.2)"
+    }
+}
 
 // define the properties file
 ext.configFile = file "build.properties"

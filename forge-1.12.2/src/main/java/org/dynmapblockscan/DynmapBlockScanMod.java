@@ -1,4 +1,4 @@
-package org.dynmap.blockscan;
+package org.dynmapblockscan;
 
 import java.io.File;
 import java.util.Map;

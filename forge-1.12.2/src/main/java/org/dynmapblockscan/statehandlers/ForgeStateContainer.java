@@ -1,10 +1,12 @@
-package org.dynmap.blockscan.statehandlers;
+package org.dynmapblockscan.statehandlers;
 
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+
+import org.dynmapblockscan.core.statehandlers.StateContainer;
 
 import com.google.common.collect.ImmutableMap;
 
