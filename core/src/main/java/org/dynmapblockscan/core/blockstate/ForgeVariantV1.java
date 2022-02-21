@@ -224,7 +224,7 @@ public class ForgeVariantV1 {
             // Add model to model table
             models.put(modid, bm);
             // Switch our model reference to corresponding blockstate level model reference
-            mod = "dynmapblockscan:forgemodel" + idx;
+            mod = "dynmapblockscan:block/forgemodel" + idx;
         }
         // Now build vanilla variant
         Variant var = new Variant(mod, this.x, this.y, this.z, this.uvlock, this.weight);

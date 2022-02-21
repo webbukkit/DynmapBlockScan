@@ -1,6 +1,8 @@
 package org.dynmapblockscan;
 
 import java.io.File;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
 
 import net.minecraft.server.MinecraftServer;
@@ -33,6 +35,8 @@ public class DynmapBlockScanMod
     public static DynmapBlockScanPlugin plugin;
     public static File jarfile;
     public static boolean verboselogging = false;
+    public static String[] excludeModules = { "minecraft" };
+    public static String[] excludeBlockNames = { };
     
     public DynmapBlockScanMod() {
     }
@@ -47,6 +51,10 @@ public class DynmapBlockScanMod
             cfg.load();
             
            verboselogging = cfg.get("Settings",  "verboselog", false).getBoolean(false);
+           
+           excludeModules = cfg.get("Settings", "exclude_modules", new String[] { "minecraft" }).getStringList();
+           excludeBlockNames = cfg.get("Settings", "exclude_blocknames", new String[0]).getStringList();
+
         }
         finally
         {
@@ -70,6 +78,8 @@ public class DynmapBlockScanMod
         server = event.getServer();
         if(plugin == null)
             plugin = proxy.startServer(server);
+        plugin.setDisabledModules(Arrays.asList(excludeModules));
+        plugin.setDisabledBlockNames(Arrays.asList(excludeBlockNames));
         plugin.serverStarting();
     }
     
