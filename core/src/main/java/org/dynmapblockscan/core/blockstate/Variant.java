@@ -128,7 +128,7 @@ public class Variant {
                 y = obj.get("y").getAsInt();
             }
             if (obj.has("z")) {
-                z = obj.get("y").getAsInt();
+                z = obj.get("z").getAsInt();
             }
             var.rotation = ModelRotation.getModelRotation(x, y, z);
     		if (obj.has("model"))
