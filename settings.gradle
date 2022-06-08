@@ -9,6 +9,7 @@ pluginManagement {
 rootProject.name = 'DynmapBlockScan'
 
 include ':core'
+include ':forge-1.19'
 include ':forge-1.18'
 include ':forge-1.17.1'
 include ':forge-1.16.5'
@@ -17,6 +18,7 @@ include ':forge-1.14.4'
 
 
 project(':core').projectDir = "$rootDir/core" as File
+project(':forge-1.19').projectDir = "$rootDir/forge-1.19" as File
 project(':forge-1.18').projectDir = "$rootDir/forge-1.18" as File
 project(':forge-1.17.1').projectDir = "$rootDir/forge-1.17.1" as File
 project(':forge-1.16.5').projectDir = "$rootDir/forge-1.16.5" as File
