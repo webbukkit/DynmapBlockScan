@@ -1,0 +1,40 @@
+{
+  "schemaVersion": 1,
+  "id": "dynmapblockscan",
+  "version": "${version}",
+
+  "name": "DynmapBlockScan",
+  "description": "Dynamically generate block definitions for Dynmap",
+  "authors": [
+    "ajahueym",
+    "mikeprimm"
+  ],
+  "contact": {
+    "homepage": "https://reddit.com/r/Dynmap",
+    "sources": "https://github.com/webbukkit/DynmapBlockScan"
+  },
+
+  "license": "CC0-1.0",
+  "icon": "assets/modid/icon.png",
+
+  "environment": "*",
+  "entrypoints": {
+    "main": [
+      "org.dynmapblockscan.fabric_1_19_3.DynmapBlockScanMod"
+    ]
+  },
+  "mixins": [
+    "dynmapblockscan.mixins.json"
+  ],
+
+  "depends": {
+    "fabric-api": "*",
+    "fabricloader": ">=0.14.8",
+    "fabric": ">=0.58.5",
+    "minecraft": ["1.19.3", "1.19.4"],
+    "forgeconfigapiport": ">=3.2.4"
+  },
+  "suggests": {
+    "another-mod": "*"
+  }
+}
