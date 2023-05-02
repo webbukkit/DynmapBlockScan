@@ -1,5 +1,5 @@
 modLoader="javafml"
-loaderVersion="[41,)"
+loaderVersion="[41,44)"
 issueTrackerURL="https://github.com/webbukkit/dynmap/issues"
 license="Apache Public License v2"
 [[mods]]
@@ -14,13 +14,13 @@ Generate block render definitions for Dynmap
 [[dependencies.dynmap]]
     modId="forge"
     mandatory=true
-    versionRange="[41,)"
+    versionRange="[41,44)"
     ordering="NONE"
     # Side this dependency is applied on - BOTH, CLIENT or SERVER
     side="SERVER"
 [[dependencies.dynmap]]
     modId="minecraft"
     mandatory=true
-    versionRange="[1.19,1.20)"
+    versionRange="[1.19,1.19.3)"
     ordering="NONE"
     side="SERVER"
