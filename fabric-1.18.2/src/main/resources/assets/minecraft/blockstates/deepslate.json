@@ -13,13 +13,13 @@
       },
       {
         "model": "minecraft:block/deepslate",
-        "x": 90,
-        "y": 90
+        "y": 90,
+        "x": 90
       },
       {
         "model": "minecraft:block/deepslate_mirrored",
-        "x": 90,
-        "y": 90
+        "y": 90,
+        "x": 90
       }
     ],
     "axis=y": [
@@ -49,13 +49,13 @@
       },
       {
         "model": "minecraft:block/deepslate",
-        "x": 90,
-        "y": 180
+        "y": 180,
+        "x": 90
       },
       {
         "model": "minecraft:block/deepslate_mirrored",
-        "x": 90,
-        "y": 180
+        "y": 180,
+        "x": 90
       }
     ]
   }

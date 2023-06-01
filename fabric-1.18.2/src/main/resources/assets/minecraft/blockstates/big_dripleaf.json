@@ -1,20 +1,20 @@
 {
   "variants": {
     "facing=east,tilt=full": {
-      "model": "minecraft:block/big_dripleaf_full_tilt",
-      "y": 90
+      "y": 90,
+      "model": "minecraft:block/big_dripleaf_full_tilt"
     },
     "facing=east,tilt=none": {
-      "model": "minecraft:block/big_dripleaf",
-      "y": 90
+      "y": 90,
+      "model": "minecraft:block/big_dripleaf"
     },
     "facing=east,tilt=partial": {
-      "model": "minecraft:block/big_dripleaf_partial_tilt",
-      "y": 90
+      "y": 90,
+      "model": "minecraft:block/big_dripleaf_partial_tilt"
     },
     "facing=east,tilt=unstable": {
-      "model": "minecraft:block/big_dripleaf",
-      "y": 90
+      "y": 90,
+      "model": "minecraft:block/big_dripleaf"
     },
     "facing=north,tilt=full": {
       "model": "minecraft:block/big_dripleaf_full_tilt"
@@ -29,36 +29,36 @@
       "model": "minecraft:block/big_dripleaf"
     },
     "facing=south,tilt=full": {
-      "model": "minecraft:block/big_dripleaf_full_tilt",
-      "y": 180
+      "y": 180,
+      "model": "minecraft:block/big_dripleaf_full_tilt"
     },
     "facing=south,tilt=none": {
-      "model": "minecraft:block/big_dripleaf",
-      "y": 180
+      "y": 180,
+      "model": "minecraft:block/big_dripleaf"
     },
     "facing=south,tilt=partial": {
-      "model": "minecraft:block/big_dripleaf_partial_tilt",
-      "y": 180
+      "y": 180,
+      "model": "minecraft:block/big_dripleaf_partial_tilt"
     },
     "facing=south,tilt=unstable": {
-      "model": "minecraft:block/big_dripleaf",
-      "y": 180
+      "y": 180,
+      "model": "minecraft:block/big_dripleaf"
     },
     "facing=west,tilt=full": {
-      "model": "minecraft:block/big_dripleaf_full_tilt",
-      "y": 270
+      "y": 270,
+      "model": "minecraft:block/big_dripleaf_full_tilt"
     },
     "facing=west,tilt=none": {
-      "model": "minecraft:block/big_dripleaf",
-      "y": 270
+      "y": 270,
+      "model": "minecraft:block/big_dripleaf"
     },
     "facing=west,tilt=partial": {
-      "model": "minecraft:block/big_dripleaf_partial_tilt",
-      "y": 270
+      "y": 270,
+      "model": "minecraft:block/big_dripleaf_partial_tilt"
     },
     "facing=west,tilt=unstable": {
-      "model": "minecraft:block/big_dripleaf",
-      "y": 270
+      "y": 270,
+      "model": "minecraft:block/big_dripleaf"
     }
   }
 }

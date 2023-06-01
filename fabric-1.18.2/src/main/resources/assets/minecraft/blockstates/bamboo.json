@@ -1,6 +1,9 @@
 {
   "multipart": [
     {
+      "when": {
+        "age": "0"
+      },
       "apply": [
         {
           "model": "minecraft:block/bamboo1_age0"
@@ -14,12 +17,12 @@
         {
           "model": "minecraft:block/bamboo4_age0"
         }
-      ],
-      "when": {
-        "age": "0"
-      }
+      ]
     },
     {
+      "when": {
+        "age": "1"
+      },
       "apply": [
         {
           "model": "minecraft:block/bamboo1_age1"
@@ -33,25 +36,22 @@
         {
           "model": "minecraft:block/bamboo4_age1"
         }
-      ],
-      "when": {
-        "age": "1"
-      }
+      ]
     },
     {
-      "apply": {
-        "model": "minecraft:block/bamboo_small_leaves"
-      },
       "when": {
         "leaves": "small"
+      },
+      "apply": {
+        "model": "minecraft:block/bamboo_small_leaves"
       }
     },
     {
-      "apply": {
-        "model": "minecraft:block/bamboo_large_leaves"
-      },
       "when": {
         "leaves": "large"
+      },
+      "apply": {
+        "model": "minecraft:block/bamboo_large_leaves"
       }
     }
   ]
