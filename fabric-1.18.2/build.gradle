@@ -1,0 +1,74 @@
+plugins {
+	id 'fabric-loom' version '1.0-SNAPSHOT'
+}
+
+project.archivesBaseName = "${parent.name}-fabric-1.18.2"
+version = project.mod_version
+group = project.maven_group
+
+eclipse {
+	project {
+		name = "${parent.name}-fabric-1.18.2"
+	}
+}
+
+configurations {
+	shadow
+	implementation.extendsFrom(shadow)
+}
+
+repositories {
+	maven { url 'https://cursemaven.com' }
+	maven { url 'https://oss.sonatype.org/content/repositories/snapshots' }
+
+	mavenCentral()
+}
+
+dependencies {
+	minecraft "com.mojang:minecraft:${project.minecraft_version}"
+	mappings "net.fabricmc:yarn:${project.yarn_mappings}:v2"
+	modImplementation "net.fabricmc:fabric-loader:${project.loader_version}"
+
+	modImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
+
+	compileOnly "us.dynmap:DynmapCoreAPI:${parent.version}"
+
+	shadow project(path: ":core", configuration: 'shadow')
+	modImplementation "com.electronwill.night-config:core:${project.night_config_core_version}"
+	modImplementation "com.electronwill.night-config:toml:${project.night_config_toml_version}"
+	modImplementation "curse.maven:forge-config-api-port-fabric-547434:${project.config_api_id}"
+
+	compileOnly 'net.luckperms:api:5.4'
+	compileOnly group: 'com.google.code.findbugs', name: 'jsr305', version: '3.0.2'
+	modCompileOnly "me.lucko:fabric-permissions-api:0.1-SNAPSHOT"
+}
+
+processResources {
+	filesMatching('fabric.mod.json') {
+		expand "version": project.version
+	}
+}
+
+java {
+	// Loom will automatically attach sourcesJar to a RemapSourcesJar task and to the "build" task
+	// if it is present.
+	// If you remove this line, sources will not be generated.
+	withSourcesJar()
+}
+
+jar {
+	from "LICENSE"
+	from {
+		configurations.shadow.collect { it.toString().contains("guava") ? null : it.isDirectory() ? it : zipTree(it) }
+	}
+}
+
+remapJar {
+	archiveFileName = "${parent.name}-${parent.version}-fabric-1.18.2.jar"
+	destinationDirectory = file '../target'
+}
+
+remapJar.doLast {
+	task ->
+		ant.checksum file: task.archivePath
+}

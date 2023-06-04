@@ -27,7 +27,7 @@ allprojects  {
   }
 
   apply plugin: 'java'
-  
+
   group = 'us.dynmap'
   version = '3.6-SNAPSHOT'
 
@@ -40,7 +40,7 @@ ext {
   globals = new Globals()
 }
 
-subprojects {  
+subprojects {
   apply plugin: "com.github.johnrengelman.shadow"
   apply plugin: 'java'
   apply plugin: 'maven-publish'
@@ -53,7 +53,7 @@ subprojects {
 }
 
 clean {
-  delete "target" 
+  delete "target"
 }
 
 task setupCIWorkspace {
