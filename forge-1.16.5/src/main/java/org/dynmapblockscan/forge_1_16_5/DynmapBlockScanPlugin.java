@@ -59,9 +59,14 @@ public class DynmapBlockScanPlugin extends AbstractBlockScanBase
         	if (mfi == null) continue;
         	ModFile mf = mfi.getFile();
         	if (mf == null) continue;
-        	File src = mf.getFilePath().toFile();
-        	// Process mod file
-        	processModFile(mid, src);
+            try {
+            	File src = mf.getFilePath().toFile();
+            	// Process mod file
+            	processModFile(mid, src);
+            }
+            catch (UnsupportedOperationException ex) {
+            	logger.warning("jar in jar method found, skipping: " + ex.getMessage());
+            }
         }
     }
     

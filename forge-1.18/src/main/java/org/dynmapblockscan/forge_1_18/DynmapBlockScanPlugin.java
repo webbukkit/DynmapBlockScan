@@ -13,6 +13,7 @@ import java.util.Optional;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.dynmap.Log;
 import org.dynmapblockscan.core.AbstractBlockScanBase;
 import org.dynmapblockscan.core.BlockScanLog;
 import org.dynmapblockscan.core.BlockStateOverrides.BlockStateOverride;
@@ -61,9 +62,14 @@ public class DynmapBlockScanPlugin extends AbstractBlockScanBase
         	if (mfi == null) continue;
         	IModFile mf = mfi.getFile();
         	if (mf == null) continue;
-        	File src = mf.getFilePath().toFile();
-        	// Process mod file
-        	processModFile(mid, src);
+            try {
+            	File src = mf.getFilePath().toFile();
+            	// Process mod file
+            	processModFile(mid, src);
+            }
+            catch (UnsupportedOperationException ex) {
+            	logger.warning("jar in jar method found, skipping: " + ex.getMessage());
+            }
         }
     }
     
