@@ -13,7 +13,6 @@ import java.util.Optional;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.dynmap.Log;
 import org.dynmapblockscan.core.AbstractBlockScanBase;
 import org.dynmapblockscan.core.BlockScanLog;
 import org.dynmapblockscan.core.BlockStateOverrides.BlockStateOverride;
