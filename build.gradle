@@ -19,6 +19,7 @@ plugins {
 
 allprojects  {
   repositories {
+     maven { url 'https://libraries.minecraft.net/' }
      maven { url "https://oss.sonatype.org/content/repositories/releases" }
      maven { url "https://repo.mikeprimm.com" }
      maven { url "https://repo.maven.apache.org/maven2" }
