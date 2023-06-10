@@ -36,9 +36,6 @@ dependencies {
 	compileOnly "us.dynmap:DynmapCoreAPI:${parent.version}"
 
 	shadow project(path: ":core", configuration: 'shadow')
-	modImplementation "com.electronwill.night-config:core:${project.night_config_core_version}"
-	modImplementation "com.electronwill.night-config:toml:${project.night_config_toml_version}"
-	modImplementation "curse.maven:forge-config-api-port-fabric-547434:${project.config_api_id}"
 
 	compileOnly 'net.luckperms:api:5.4'
 	compileOnly group: 'com.google.code.findbugs', name: 'jsr305', version: '3.0.2'

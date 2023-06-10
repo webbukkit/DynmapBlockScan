@@ -6,13 +6,11 @@ import net.fabricmc.loader.api.ModContainer;
 import net.minecraft.server.MinecraftServer;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
 import net.fabricmc.loader.api.FabricLoader;
-import net.minecraftforge.api.ModLoadingContext;
-import net.minecraftforge.common.ForgeConfigSpec;
-import net.minecraftforge.fml.config.ModConfig;
 
 import java.io.File;
 import java.util.Arrays;
 import java.util.List;
+import java.util.ArrayList;
 
 public class DynmapBlockScanMod implements ModInitializer
 {
@@ -48,30 +46,30 @@ public class DynmapBlockScanMod implements ModInitializer
         ServerLifecycleEvents.SERVER_STARTED.register(this::onServerStarted);
         ServerLifecycleEvents.SERVER_STOPPED.register(this::onServerStopped);
 
-        FileUtils.getOrCreateDirectory(FabricLoader.getInstance().getConfigDir().resolve("dynmapblockscan"), "dynmapblockscan");
-
-
-        ModLoadingContext.registerConfig("dynmapblockscan", ModConfig.Type.COMMON, SettingsConfig.SPEC, "dynmapblockscan/settings.toml");
+        //FileUtils.getOrCreateDirectory(FabricLoader.getInstance().getConfigDir().resolve("dynmapblockscan"), "dynmapblockscan");
+        //ModLoadingContext.registerConfig("dynmapblockscan", ModConfig.Type.COMMON, SettingsConfig.SPEC, "dynmapblockscan/settings.toml");
 
     }
 
     public static class SettingsConfig
     {
-        public static final ForgeConfigSpec.Builder BUILDER = new ForgeConfigSpec.Builder();
-        public static final ForgeConfigSpec SPEC;
-
-        public static final ForgeConfigSpec.ConfigValue<List<? extends String>> excludeModules;
-        public static final ForgeConfigSpec.ConfigValue<List<? extends String>> excludeBlockNames;
-
+//        public static final ForgeConfigSpec.Builder BUILDER = new ForgeConfigSpec.Builder();
+//        public static final ForgeConfigSpec SPEC;
+//
+//        public static final ForgeConfigSpec.ConfigValue<List<? extends String>> excludeModules;
+//        public static final ForgeConfigSpec.ConfigValue<List<? extends String>> excludeBlockNames;
+    	  public static List<String> excludedModules = Arrays.asList("minecraft");
+    	  public static List<String> excludedBlockNames = Arrays.asList();
+    	  
         static
         {
-            BUILDER.comment("DynmapBlockScan settings");
-            BUILDER.push("settings");
-            excludeModules = BUILDER.comment("Which modules to exclude").defineList("exclude_modules", Arrays.asList("minecraft"), entry -> true);
-            excludeBlockNames = BUILDER.comment("Which block names to exclude").defineList("exclude_blocknames", Arrays.asList(), entry -> true);
-            BUILDER.pop();
-
-            SPEC = BUILDER.build();
+//            BUILDER.comment("DynmapBlockScan settings");
+//            BUILDER.push("settings");
+//            excludeModules = BUILDER.comment("Which modules to exclude").defineList("exclude_modules", Arrays.asList("minecraft"), entry -> true);
+//            excludeBlockNames = BUILDER.comment("Which block names to exclude").defineList("exclude_blocknames", Arrays.asList(), entry -> true);
+//            BUILDER.pop();
+//
+//            SPEC = BUILDER.build();
         }
     }
 
@@ -81,8 +79,10 @@ public class DynmapBlockScanMod implements ModInitializer
         server = server_;
         if(plugin == null)
             plugin = proxy.startServer(server);
-        plugin.setDisabledModules((List<String>) SettingsConfig.excludeModules.get());
-        plugin.setDisabledBlockNames((List<String>) SettingsConfig.excludeBlockNames.get());
+//        plugin.setDisabledModules((List<String>) SettingsConfig.excludeModules.get());
+//        plugin.setDisabledBlockNames((List<String>) SettingsConfig.excludeBlockNames.get());
+        plugin.setDisabledModules((List<String>) SettingsConfig.excludedModules);
+        plugin.setDisabledBlockNames((List<String>) SettingsConfig.excludedBlockNames);
         plugin.serverStarting();
     }
 
