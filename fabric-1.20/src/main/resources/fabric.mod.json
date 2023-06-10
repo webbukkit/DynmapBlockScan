@@ -31,8 +31,7 @@
     "fabric-api": "*",
     "fabricloader": ">=0.14.8",
     "fabric": ">=0.63.0",
-    "minecraft": [">=1.20" ],
-    "forgeconfigapiport": ">=3.2.4"
+    "minecraft": [">=1.20" ]
   },
   "suggests": {
     "another-mod": "*"
