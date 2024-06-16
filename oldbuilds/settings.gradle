@@ -1,11 +1,9 @@
 
 rootProject.name = 'DynmapBlockScan'
 
-include ':core'
 include ':forge-1.12.2'
 //include ':forge-1.11.2'
 
-project(':core').projectDir = "$rootDir/../core" as File
 project(':forge-1.12.2').projectDir = "$rootDir/../forge-1.12.2" as File
 //project(':forge-1.11.2').projectDir = "$rootDir/../forge-1.11.2" as File
 
