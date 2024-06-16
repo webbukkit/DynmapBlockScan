@@ -20,6 +20,11 @@ buildscript {
 apply plugin: 'net.minecraftforge.gradle.forge'
 apply plugin: 'eclipse'
 
+sourceSets {
+    main.java.srcDirs = ['src/main/java', '../core/src/main/java', '../core/src/main/java']
+    main.resources.srcDirs = ['src/main/resources', '../core/src/main/resources', '../core/src/main/resources']
+}
+
 eclipse {
     project {
         name = "DynmapBlockScan(Forge-Legacy-1.12.2)"
