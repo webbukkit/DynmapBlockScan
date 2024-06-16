@@ -5,12 +5,12 @@ buildscript {
         mavenCentral()
     }
     dependencies {
-        classpath group: 'net.minecraftforge.gradle', name: 'ForgeGradle', version: '5.1.+', changing: true
+        classpath group: 'net.minecraftforge.gradle', name: 'ForgeGradle', version: '6.+', changing: true
     }
 }
 apply plugin: 'net.minecraftforge.gradle'
 apply plugin: 'eclipse'
-apply plugin: 'com.github.johnrengelman.shadow'
+//apply plugin: 'com.github.johnrengelman.shadow'
 
 eclipse {
     project {
@@ -61,9 +61,9 @@ shadowJar {
         exclude("META-INF/services/**")
         exclude("com/electronwill/**")
     }
-    
-    archiveName = "${parent.name}-${parent.version}-forge-1.19.jar"
-    destinationDir = file '../target'
+    archiveBaseName = "${parent.name}"
+    archiveClassifier = "forge-1.19"
+    destinationDirectory = file '../target'
 }
 
 shadowJar.doLast {
@@ -81,7 +81,7 @@ reobf {
 
 task deobfJar(type: Jar) {
     from sourceSets.main.output
-    classifier = 'dev'
+    archiveClassifier = 'dev'
 }
 
 artifacts {
@@ -89,4 +89,3 @@ artifacts {
 }
 
 build.dependsOn(shadowJar)
-

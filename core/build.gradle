@@ -17,6 +17,6 @@ dependencies {
 }
 
 jar {
-    destinationDir = file '../target'
+    destinationDirectory = file '../target'
 }
 
