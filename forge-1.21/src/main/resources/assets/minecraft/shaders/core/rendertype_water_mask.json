@@ -1,13 +1,6 @@
 {
-    "blend": {
-        "func": "add",
-        "srcrgb": "srcalpha",
-        "dstrgb": "1-srcalpha"
-    },
     "vertex": "rendertype_water_mask",
     "fragment": "rendertype_water_mask",
-    "attributes": [
-    ],
     "samplers": [
     ],
     "uniforms": [

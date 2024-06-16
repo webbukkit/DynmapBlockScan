@@ -1,0 +1,75 @@
+buildscript {
+    repositories {
+        maven { url = 'https://files.minecraftforge.net/maven' }
+        jcenter()
+        mavenCentral()
+    }
+    dependencies {
+        classpath group: 'net.minecraftforge.gradle', name: 'ForgeGradle', version: '6.+', changing: true
+    }
+}
+apply plugin: 'net.minecraftforge.gradle'
+apply plugin: 'eclipse'
+apply plugin: 'com.github.johnrengelman.shadow'
+
+eclipse {
+    project {
+        name = "${parent.name}-forge-1.20.6"
+    }
+}
+
+sourceCompatibility = targetCompatibility = compileJava.sourceCompatibility = compileJava.targetCompatibility = JavaLanguageVersion.of(21) // Need this here so eclipse task generates correctly.
+
+println('Java: ' + System.getProperty('java.version') + ' JVM: ' + System.getProperty('java.vm.version') + '(' + System.getProperty('java.vendor') + ') Arch: ' + System.getProperty('os.arch'))
+
+ext.buildNumber = System.getenv().BUILD_NUMBER ?: "Dev"
+
+minecraft {
+    mappings channel: 'official', version: '1.20.6'
+    //accessTransformer = file('src/main/resources/META-INF/accesstransformer.cfg')
+    runs {
+        server {
+            workingDirectory project.file('run').canonicalPath
+        }
+    }
+}
+
+project.archivesBaseName = "${parent.name}-forge-1.20.6"
+
+dependencies {    
+	compileOnly "us.dynmap:DynmapCoreAPI:${parent.version}"
+	implementation project(path: ":core")
+    minecraft 'net.minecraftforge:forge:1.20.6-50.1.0'
+}
+
+processResources
+{
+    filesMatching('META-INF/mods.toml') {
+        // replace version and mcversion
+        expand(
+        	version: project.version + '-' + project.ext.buildNumber,
+        	mcversion: "1.20.6"
+    	)
+    }
+}
+
+shadowJar {
+    dependencies {
+        include(dependency(':core'))
+        exclude(dependency("us.dynmap:DynmapCoreAPI"))
+        exclude("META-INF/maven/**")
+        exclude("META-INF/services/**")
+        exclude("com/electronwill/**")
+    }
+    archiveBaseName = "${parent.name}"
+    archiveClassifier = "forge-1.20.6"
+    destinationDirectory = file '../target'
+}
+
+shadowJar.doLast {
+    task ->
+        ant.checksum file: task.archivePath
+}
+
+build.dependsOn(shadowJar)
+

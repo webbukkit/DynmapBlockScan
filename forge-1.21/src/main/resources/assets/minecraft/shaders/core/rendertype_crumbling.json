@@ -1,18 +1,6 @@
 {
-    "blend": {
-        "func": "add",
-        "srcrgb": "srcalpha",
-        "dstrgb": "1-srcalpha"
-    },
     "vertex": "rendertype_crumbling",
     "fragment": "rendertype_crumbling",
-    "attributes": [
-        "Position",
-        "Color",
-        "UV0",
-        "UV2",
-        "Normal"
-    ],
     "samplers": [
         { "name": "Sampler0" }
     ],

@@ -14,10 +14,9 @@ include ':fabric-1.19.1'
 include ':fabric-1.19.3'
 include ':fabric-1.20'
 include ':forge-1.21'
+include ':forge-1.20.6'
 include ':forge-1.20.4'
-include ':forge-1.20'
 include ':forge-1.19.3'
-include ':forge-1.19'
 include ':forge-1.18'
 include ':forge-1.17.1'
 include ':forge-1.16.5'
@@ -31,9 +30,8 @@ project(':fabric-1.19.1').projectDir = "$rootDir/fabric-1.19.1" as File
 project(':fabric-1.19.3').projectDir = "$rootDir/fabric-1.19.3" as File
 project(':fabric-1.20').projectDir = "$rootDir/fabric-1.20" as File
 project(':forge-1.20.4').projectDir = "$rootDir/forge-1.20.4" as File
-project(':forge-1.20').projectDir = "$rootDir/forge-1.20" as File
+project(':forge-1.20.6').projectDir = "$rootDir/forge-1.20.6" as File
 project(':forge-1.19.3').projectDir = "$rootDir/forge-1.19.3" as File
-project(':forge-1.19').projectDir = "$rootDir/forge-1.19" as File
 project(':forge-1.18').projectDir = "$rootDir/forge-1.18" as File
 project(':forge-1.17.1').projectDir = "$rootDir/forge-1.17.1" as File
 project(':forge-1.16.5').projectDir = "$rootDir/forge-1.16.5" as File

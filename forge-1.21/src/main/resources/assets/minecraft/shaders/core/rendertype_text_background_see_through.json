@@ -1,15 +1,6 @@
 {
-    "blend": {
-        "func": "add",
-        "srcrgb": "srcalpha",
-        "dstrgb": "1-srcalpha"
-    },
     "vertex": "rendertype_text_background_see_through",
     "fragment": "rendertype_text_background_see_through",
-    "attributes": [
-        "Position",
-        "Color"
-    ],
     "samplers": [
     ],
     "uniforms": [
