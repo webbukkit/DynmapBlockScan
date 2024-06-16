@@ -68,7 +68,6 @@ configurations {
 
 dependencies {
     dynmap "us.dynmap:DynmapCoreAPI:${parent.version}:all"
-    implementation project(path: ":core", configuration: "shadow")
 }
 
 processResources
