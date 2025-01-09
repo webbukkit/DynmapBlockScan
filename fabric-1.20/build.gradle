@@ -1,5 +1,5 @@
 plugins {
-	id 'fabric-loom' version '1.0-SNAPSHOT'
+	id 'fabric-loom' version '1.9-SNAPSHOT'
 }
 
 project.archivesBaseName = "${parent.name}-fabric-1.20"
