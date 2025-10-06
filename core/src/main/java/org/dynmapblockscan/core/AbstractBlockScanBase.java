@@ -47,6 +47,7 @@ import org.dynmapblockscan.core.statehandlers.StateContainer.StateRec;
 import org.dynmapblockscan.core.statehandlers.StateContainer.WellKnownBlockClasses;
 import org.dynmapblockscan.core.util.Matrix3D;
 import org.dynmapblockscan.core.util.Vector3D;
+import org.dynmapblockscan.core.PathElement;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -150,16 +151,6 @@ public abstract class AbstractBlockScanBase {
     	public int lightAttenuation;
     }
 
-    protected static class PathElement {
-    	String[] modids;
-    	PathElement(String mid) {
-    		modids = new String[] { mid };
-    	}
-    	void addModId(String mid) {
-    		modids = Arrays.copyOf(modids, modids.length + 1);
-    		modids[modids.length-1] = mid;
-    	}
-    }
     protected static class PathDirectory extends PathElement {
     	Map<String,PathElement> entries = new HashMap<String, PathElement>();
     	PathDirectory(String mid) {
