@@ -1,4 +1,4 @@
-package org.dynmapblockscan.fabric_1_21;
+package org.dynmapblockscan.fabric_1_21_9;
 
 import com.google.common.collect.ImmutableMap;
 import net.fabricmc.fabric.api.resource.ResourceManagerHelper;
@@ -28,15 +28,17 @@ import org.dynmapblockscan.core.blockstate.BSBlockState;
 import org.dynmapblockscan.core.blockstate.VariantList;
 import org.dynmapblockscan.core.model.BlockModel;
 import org.dynmapblockscan.core.statehandlers.StateContainer.StateRec;
-import org.dynmapblockscan.fabric_1_21.statehandlers.FabricStateContainer;
+import org.dynmapblockscan.fabric_1_21_9.statehandlers.FabricStateContainer;
 
 import java.io.File;
+import org.dynmapblockscan.core.PathElement;
 import java.io.InputStream;
 import java.nio.file.Path;
 import java.util.*;
 
 public class DynmapBlockScanPlugin extends AbstractBlockScanBase
 {
+    private Map<String, PathElement> assetmap = new HashMap<>();
     public static DynmapBlockScanPlugin plugin;
     public static FabricLoader flInst = FabricLoader.getInstance();
 
@@ -47,21 +49,21 @@ public class DynmapBlockScanPlugin extends AbstractBlockScanBase
     }
 
     public void buildAssetMap() {
-    	assetmap = new HashMap<String, PathElement>();
+        assetmap.clear();
         Iterator<ModContainer> mcl = flInst.getAllMods().stream().iterator();
 
         while (mcl.hasNext()) {
-        	ModContainer mc = mcl.next();
-        	String mid = mc.getMetadata().getId().toLowerCase();
+            ModContainer mc = mcl.next();
+            String mid = mc.getMetadata().getId().toLowerCase();
             ModOrigin modOrigin = mc.getOrigin();
-        	if (modOrigin == null) continue;
+            if (modOrigin == null) continue;
 
-            if(modOrigin.getKind() == ModOrigin.Kind.NESTED) continue;;
+            if (modOrigin.getKind() == ModOrigin.Kind.NESTED) continue;
             List<Path> modPaths = modOrigin.getPaths();
-        	if (modPaths == null) continue;
-        	File src = modPaths.get(0).toFile();
-        	// Process mod file
-        	processModFile(mid, src);
+            if (modPaths == null) continue;
+            File src = modPaths.get(0).toFile();
+            // Process mod file
+            processModFile(mid, src);
         }
     }
 
@@ -115,11 +117,11 @@ public class DynmapBlockScanPlugin extends AbstractBlockScanBase
             			if (verboselogging)
             			    logger.info(String.format("%s: Invisible block - nothing to render", rl));
             			break;
-            		case ENTITYBLOCK_ANIMATED:
-            			uses_nonmodel = true;
-                        if (verboselogging)
-                   			logger.info(String.format("%s: Animated block - needs to be handled specially", rl));
-            			break;
+            		// case ENTITYBLOCK_ANIMATED:
+            		// 	uses_nonmodel = true;
+                    //     if (verboselogging)
+                   	// 		logger.info(String.format("%s: Animated block - needs to be handled specially", rl));
+            		// 	break;
 //            		case LIQUID:
 //            			uses_nonmodel = true;
 //                        if (DynmapBlockScanMod.verboselogging)
@@ -148,7 +150,7 @@ public class DynmapBlockScanPlugin extends AbstractBlockScanBase
                 br.materialColorID = MaterialColorID.byID(matcol.id);
                 br.lightAttenuation = 15;
                 try {	// Workaround for mods with broken block state logic...
-                	br.lightAttenuation = b.getDefaultState().isSolidBlock(EmptyBlockView.INSTANCE, BlockPos.ORIGIN) ? 15 : (b.getDefaultState().isTransparent(EmptyBlockView.INSTANCE, BlockPos.ORIGIN) ? 0 : 1);
+                	br.lightAttenuation = b.getDefaultState().isSolidBlock(EmptyBlockView.INSTANCE, BlockPos.ORIGIN) ? 15 : (b.getDefaultState().isTransparent() ? 0 : 1);
                 } catch (Exception x) {
                 	logger.warning(String.format("Exception while checking lighting data for block state: %s", b));
                 	logger.verboseinfo("Exception: " + x.toString());

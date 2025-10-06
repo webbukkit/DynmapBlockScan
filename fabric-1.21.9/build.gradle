@@ -1,14 +1,14 @@
 plugins {
-	id 'fabric-loom' version '1.9-SNAPSHOT'
+	id 'fabric-loom' version '1.11-SNAPSHOT'
 }
 
-project.archivesBaseName = "${parent.name}-fabric-1.21"
+project.archivesBaseName = "${parent.name}-fabric-1.21.9"
 version = project.mod_version
 group = project.maven_group
 
 eclipse {
 	project {
-		name = "${parent.name}-fabric-1.21"
+		name = "${parent.name}-fabric-1.21.9"
 	}
 }
 
@@ -38,7 +38,7 @@ dependencies {
 
 	compileOnly 'net.luckperms:api:5.4'
 	compileOnly group: 'com.google.code.findbugs', name: 'jsr305', version: '3.0.2'
-	modCompileOnly "me.lucko:fabric-permissions-api:0.1-SNAPSHOT"
+	modCompileOnly files("../libs/fabric-permissions-api-0.1.jar")
 }
 
 processResources {
@@ -62,7 +62,7 @@ jar {
 }
 
 remapJar {
-	archiveFileName = "${parent.name}-${parent.version}-fabric-1.21.jar"
+	archiveFileName = "${parent.name}-${parent.version}-fabric-1.21.9.jar"
 	destinationDirectory = file '../target'
 }
 

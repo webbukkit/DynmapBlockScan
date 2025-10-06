@@ -20,7 +20,7 @@
   "environment": "*",
   "entrypoints": {
     "main": [
-      "org.dynmapblockscan.fabric_1_21.DynmapBlockScanMod"
+      "org.dynmapblockscan.fabric_1_21_9.DynmapBlockScanMod"
     ]
   },
   "mixins": [

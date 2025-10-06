@@ -1,4 +1,4 @@
-package org.dynmapblockscan.fabric_1_21;
+package org.dynmapblockscan.fabric_1_21_9;
 
 public class Version {
     public static final String VER = "@VERSION@";

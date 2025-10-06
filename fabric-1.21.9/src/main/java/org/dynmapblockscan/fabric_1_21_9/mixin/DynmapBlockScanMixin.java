@@ -1,8 +1,8 @@
-package org.dynmapblockscan.fabric_1_21.mixin;
+package org.dynmapblockscan.fabric_1_21_9.mixin;
 
 import net.minecraft.client.gui.screen.TitleScreen;
 
-import org.dynmapblockscan.fabric_1_21.DynmapBlockScanMod;
+import org.dynmapblockscan.fabric_1_21_9.DynmapBlockScanMod;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;

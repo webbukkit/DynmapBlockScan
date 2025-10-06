@@ -39,6 +39,7 @@ dependencies {
 	compileOnly 'net.luckperms:api:5.4'
 	compileOnly group: 'com.google.code.findbugs', name: 'jsr305', version: '3.0.2'
 	modCompileOnly "me.lucko:fabric-permissions-api:0.1-SNAPSHOT"
+	// modCompileOnly files("../libs/fabric-permissions-api-0.1.jar")
 }
 
 processResources {

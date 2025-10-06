@@ -1,4 +1,4 @@
-package org.dynmapblockscan.fabric_1_21;
+package org.dynmapblockscan.fabric_1_21_9;
 
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.ModInitializer;
@@ -46,7 +46,7 @@ public class DynmapBlockScanMod implements ModInitializer
         ServerLifecycleEvents.SERVER_STARTED.register(this::onServerStarted);
         ServerLifecycleEvents.SERVER_STOPPED.register(this::onServerStopped);
 
-        //FileUtils.getOrCreateDirectory(FabricLoader.getInstance().getConfigDir().resolve("dynmapblockscan"), "dynmapblockscan");
+        // FileUtils.getOrCreateDirectory(FabricLoader.getInstance().getConfigDir().resolve("dynmapblockscan"), "dynmapblockscan");
         //ModLoadingContext.registerConfig("dynmapblockscan", ModConfig.Type.COMMON, SettingsConfig.SPEC, "dynmapblockscan/settings.toml");
 
     }
@@ -58,7 +58,9 @@ public class DynmapBlockScanMod implements ModInitializer
 //
 //        public static final ForgeConfigSpec.ConfigValue<List<? extends String>> excludeModules;
 //        public static final ForgeConfigSpec.ConfigValue<List<? extends String>> excludeBlockNames;
-    	  public static List<String> excludedModules = Arrays.asList("minecraft");
+
+
+        public static List<String> excludedModules = Arrays.asList("minecraft"); // <--- Remove "minecraft" to generate vanilla block list
     	  public static List<String> excludedBlockNames = Arrays.asList();
     	  
         static

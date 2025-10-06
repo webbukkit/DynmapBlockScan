@@ -1,4 +1,4 @@
-package org.dynmapblockscan.fabric_1_21.statehandlers;
+package org.dynmapblockscan.fabric_1_21_9.statehandlers;
 
 import com.google.common.collect.ImmutableMap;
 import net.minecraft.block.*;
