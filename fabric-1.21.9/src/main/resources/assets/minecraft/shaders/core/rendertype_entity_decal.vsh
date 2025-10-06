@@ -1,7 +1,9 @@
-#version 150
+#version 330
 
-#moj_import <light.glsl>
-#moj_import <fog.glsl>
+#moj_import <minecraft:light.glsl>
+#moj_import <minecraft:fog.glsl>
+#moj_import <minecraft:dynamictransforms.glsl>
+#moj_import <minecraft:projection.glsl>
 
 in vec3 Position;
 in vec4 Color;
@@ -13,14 +15,9 @@ in vec3 Normal;
 uniform sampler2D Sampler1;
 uniform sampler2D Sampler2;
 
-uniform mat4 ModelViewMat;
-uniform mat4 ProjMat;
-uniform int FogShape;
 
-uniform vec3 Light0_Direction;
-uniform vec3 Light1_Direction;
-
-out float vertexDistance;
+out float sphericalVertexDistance;
+out float cylindricalVertexDistance;
 out vec4 vertexColor;
 out vec4 overlayColor;
 out vec2 texCoord0;
@@ -28,7 +25,8 @@ out vec2 texCoord0;
 void main() {
     gl_Position = ProjMat * ModelViewMat * vec4(Position, 1.0);
 
-    vertexDistance = fog_distance(Position, FogShape);
+    sphericalVertexDistance = fog_spherical_distance(Position);
+    cylindricalVertexDistance = fog_cylindrical_distance(Position);
     vertexColor = minecraft_mix_light(Light0_Direction, Light1_Direction, Normal, Color) * texelFetch(Sampler2, UV2 / 16, 0);
     overlayColor = texelFetch(Sampler1, UV1, 0);
     texCoord0 = UV0;
