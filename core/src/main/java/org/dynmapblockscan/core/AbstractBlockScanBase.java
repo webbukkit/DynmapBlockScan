@@ -158,7 +158,7 @@ public abstract class AbstractBlockScanBase {
     	}
     	
     }
-    protected static Map<String, PathElement> assetmap;	// Map of asset paths and mods containing them
+    protected Map<String, PathElement> assetmap = new HashMap<>();	// Map of asset paths and mods containing them
 
     protected void addElement(String modid, String n) {
     	String[] tok = n.split("/");
