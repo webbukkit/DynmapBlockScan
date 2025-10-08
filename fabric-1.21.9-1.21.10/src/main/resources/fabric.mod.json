@@ -20,7 +20,7 @@
   "environment": "*",
   "entrypoints": {
     "main": [
-      "org.dynmapblockscan.fabric_1_21_9.DynmapBlockScanMod"
+      "org.dynmapblockscan.fabric_1_21_9_1_21_10.DynmapBlockScanMod"
     ]
   },
   "mixins": [
@@ -31,7 +31,7 @@
     "fabric-api": "*",
     "fabricloader": ">=0.15.11",
     "fabric": ">=0.100.1",
-    "minecraft": [">=1.21" ]
+    "minecraft": ["1.21.9", "1.21.10"]
   },
   "suggests": {
     "another-mod": "*"

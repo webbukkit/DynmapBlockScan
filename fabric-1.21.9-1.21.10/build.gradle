@@ -62,7 +62,7 @@ jar {
 }
 
 remapJar {
-	archiveFileName = "${parent.name}-${parent.version}-fabric-1.21.9.jar"
+	archiveFileName = "${parent.name}-${parent.version}-fabric-1.21.9-1.21.10.jar"
 	destinationDirectory = file '../target'
 }
 

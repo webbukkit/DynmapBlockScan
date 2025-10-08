@@ -1,4 +1,4 @@
-package org.dynmapblockscan.fabric_1_21_9;
+package org.dynmapblockscan.fabric_1_21_9_1_21_10;
 
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.ModInitializer;

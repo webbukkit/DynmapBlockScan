@@ -1,4 +1,4 @@
-package org.dynmapblockscan.fabric_1_21_9;
+package org.dynmapblockscan.fabric_1_21_9_1_21_10;
 
 import com.google.common.collect.ImmutableMap;
 import net.fabricmc.fabric.api.resource.ResourceManagerHelper;
@@ -28,7 +28,7 @@ import org.dynmapblockscan.core.blockstate.BSBlockState;
 import org.dynmapblockscan.core.blockstate.VariantList;
 import org.dynmapblockscan.core.model.BlockModel;
 import org.dynmapblockscan.core.statehandlers.StateContainer.StateRec;
-import org.dynmapblockscan.fabric_1_21_9.statehandlers.FabricStateContainer;
+import org.dynmapblockscan.fabric_1_21_9_1_21_10.statehandlers.FabricStateContainer;
 
 import java.io.File;
 import org.dynmapblockscan.core.PathElement;
