@@ -1,0 +1,14 @@
+{
+  "required": true,
+  "minVersion": "0.8",
+  "package": "org.dynmapblockscan.fabric_1_21_9_1_21_10.mixin",
+  "compatibilityLevel": "JAVA_21",
+  "mixins": [
+  ],
+  "client": [
+    "DynmapBlockScanMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}
