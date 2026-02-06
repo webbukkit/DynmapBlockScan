@@ -1070,6 +1070,7 @@ public abstract class AbstractBlockScanBase {
         		
         		if (mod.parentModel == null) {
 					String[] tok = modid.split(":");
+                    if (tok.length < 2) break; // index out of bounds is possible here, if so, we should skip
 					mod.parentModel = loadBlockModelFile(tok[0], tok[1]);
 					models.put(modid, mod.parentModel);
 					modelToResolve.push(modid);
